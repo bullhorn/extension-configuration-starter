@@ -1,0 +1,15 @@
+{
+  "name": "NAMESPACE-ExtensionName",
+  "fieldInteractions": {
+    "ClientContact": [
+      "./dist/field-interactions/client-contact/**"
+    ],
+    "ClientCorporation": [
+      "./dist/field-interactions/client-corporation/name/logger.js"
+    ]
+  },
+  "pageInteractions": [
+    "./dist/page-interactions/record/modify-tabs/hide-all.js",
+    "./dist/page-interactions/record/modify-overview-fields/dumb.js"
+  ]
+}
