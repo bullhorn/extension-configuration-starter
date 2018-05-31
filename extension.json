@@ -11,5 +11,8 @@
   "pageInteractions": [
     "./dist/page-interactions/record/modify-tabs/hide-all.js",
     "./dist/page-interactions/record/modify-overview-fields/dumb.js"
+  ],
+  "bots": [
+    "./dist/bots/placement/slack-placement.js"
   ]
 }

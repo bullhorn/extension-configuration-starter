@@ -1,0 +1,24 @@
+{
+  "name": "bullhorn-functions-slack",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "author": "Bullhorn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bullhorn/bot-samples.git"
+  },
+  "engines": {
+    "node": ">=4.3.2"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@slack/client": "4.2.2"
+  },
+  "devDependencies": {
+    "@google-cloud/nodejs-repo-tools": "2.1.0"
+  },
+  "cloud-repo-tools": {
+    "requiresKeyFile": true,
+    "requiresProjectId": true
+  }
+}

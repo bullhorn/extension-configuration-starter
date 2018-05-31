@@ -10,10 +10,12 @@
     "build": "tsc",
     "lint": "npm run tslint -- \"src/**/*.ts\" --format verbose --type-check --project tsconfig.json",
     "extract": "npm run bullhorn -- extract",
-    "upload": "npm run bullhorn -- upload"
+    "upload": "npm run bullhorn -- upload",
+    "deploy": "npm run build && npm run extract && npm run upload"
   },
   "dependencies": {
-    "@bullhorn/bullhorn-cli": "^1.1.0",
+    "@bullhorn/bullhorn-cli": "file:../bullhorn-cli",
+    "chalk": "^2.4.1",
     "rimraf": "^2.6.2",
     "tslint": "5.7.0",
     "typescript": "~2.3.3"
