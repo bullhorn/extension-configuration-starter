@@ -1,15 +1,25 @@
 interface BotOutcome {
   outcomeType: 'UPDATEENTITY' | 'ADDTASK' | 'SENDEMAIL' | 'WEBHOOK';
+}
+
+interface BotOutcomeWebhook extends BotOutcome {
+  outcomeType: 'WEBHOOK';
   url: string;
   httpMethod: 'GET' | 'PUT' | 'POST' | 'DELETE';
-  queryParams: any
+  queryParams?: any;
+}
+
+interface BotOutcomeUpdateEntity extends BotOutcome {
+  outcomeType: 'UPDATEENTITY';
+  entity: string
+  data: any;
 }
 
 interface BotCondition {
-    entity: string;
-    field: string;
-    matchOperator: 'LIKE' | 'CONTAINS' | 'DOESNOTCONTAIN' | 'EQUALS' | 'NOTEQUALS' | 'BEGINWITH' | 'ENDSWITH' | 'ISNOTEMPTY' | 'ISEMPTY' | 'ISGREATERTHAN' | 'ISLESSTHAN';
-    value: any
+  entity: string;
+  field: string;
+  matchOperator: 'LIKE' | 'CONTAINS' | 'DOESNOTCONTAIN' | 'EQUALS' | 'NOTEQUALS' | 'BEGINWITH' | 'ENDSWITH' | 'ISNOTEMPTY' | 'ISEMPTY' | 'ISGREATERTHAN' | 'ISLESSTHAN' | 'ISUPDATED';
+  value?: any
 }
 interface BotConditionData {
   botConditions: BotCondition[];
@@ -23,7 +33,7 @@ interface Bot {
   onUpdate: boolean;
   entity: string;
   botConditionData: BotConditionData;
-  botOutcomes: BotOutcome[];
+  botOutcomes: (BotOutcomeWebhook | BotOutcomeUpdateEntity)[];
 }
 
 interface PageInteraction {
