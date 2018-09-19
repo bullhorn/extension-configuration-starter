@@ -1,5 +1,5 @@
 interface PageInteraction {
-  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify';
+  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave';
   enabled?: boolean;
   name: string;
   page: 'record';
@@ -55,6 +55,20 @@ interface PageInteractionAPI {
   toastService: any;
   modalService: any;
   injectCustomStyles(styleID: string, styles: string): void;
+  promptUser(params: {
+    headerText: string;
+    subheaderText: string
+  }): Promise<boolean>;
+  displayToast(toastConfig: {
+    message: string;
+    title?: string;
+    hideDelay?: number;
+    icon?: string;
+    theme?: string;
+    position?: string;
+    isCloseable?: boolean;
+    customClass?: string
+  }): void;
 }
 
 interface FieldInteraction {
