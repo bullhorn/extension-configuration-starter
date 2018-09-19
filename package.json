@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
+    "tslint": "tslint",
     "lint": "npm run tslint -- \"src/**/*.ts\" --format verbose --type-check --project tsconfig.json",
     "build": "node bin/build-and-upload.js prod",
     "build:staging": "node bin/build-and-upload.js staging"
