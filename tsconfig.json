@@ -6,7 +6,8 @@
     "experimentalDecorators": true,
     "lib": [
       "es5",
-      "dom"
+      "dom",
+      "es2015"
     ],
     "noEmitHelpers": true,
     "skipDefaultLibCheck": true,
