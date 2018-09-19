@@ -7,7 +7,6 @@ if(process.argv.length < 3) {
   process.exit();
 }
 
-
 const environment = process.argv[2];
 const fileName = `./environments/environment.${environment}.json`;
 
@@ -81,5 +80,5 @@ try {
     });
   });
 } catch(error) {
-  console.error('error occurred', error);
+  console.error('Error occured during build-and-upload', error);
 }
