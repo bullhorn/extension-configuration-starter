@@ -3,14 +3,10 @@
   "version": "0.0.0",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
-    "rimraf": "rimraf",
     "tslint": "tslint",
-    "bullhorn": "bullhorn",
-    "prebuild": "rimraf dist",
-    "build": "tsc",
     "lint": "npm run tslint -- \"src/**/*.ts\" --format verbose --type-check --project tsconfig.json",
-    "extract": "npm run bullhorn -- extensions extract",
-    "upload": "npm run bullhorn -- extensions upload"
+    "build": "node bin/build-and-upload.js prod",
+    "build:staging": "node bin/build-and-upload.js staging"
   },
   "dependencies": {
     "@bullhorn/bullhorn-cli": "^2.0.0",
