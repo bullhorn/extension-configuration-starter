@@ -1,5 +1,6 @@
 const fs = require('fs');
 const spawn = require('child_process').spawn;
+const jsonfile = require('jsonfile');
 
 if(process.argv.length < 3) {
   console.log('Please pass an environment argument to build.');
@@ -12,6 +13,7 @@ const fileName = `./environments/environment.${environment}.json`;
 
 if(!fs.existsSync(fileName)) {
   console.log(`Environment file with name ${fileName} does not exist...`);
+
   process.exit();
 }
 
@@ -19,6 +21,7 @@ const configuration = JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
 
 if(!configuration || !configuration.username || !configuration.password) {
   console.log(`Configuration loaded does not have a username or password`, configuration);
+
   process.exit();
 }
 
@@ -59,6 +62,50 @@ function extract(callback) {
   print(`bullhorn${cmdSuffix}`, [ 'extensions', 'extract' ], callback);
 }
 
+function injectScript(configuration, script) {
+  Object.keys(configuration).forEach( propertyName => {
+    script = script.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
+  });
+
+  return script;
+}
+
+function inject(configuration, callback) {
+  const file = `./output/extension.json`;
+
+  if(!fs.existsSync(file)) {
+    console.error('Error performing extract command; cannot inject environment variables');
+
+    process.exit();
+  }
+
+  const extensions = JSON.parse(fs.readFileSync(file, 'utf-8'));
+
+  if(extensions.fieldInteractions) {
+    Object.keys(extensions.fieldInteractions).forEach( entity => {
+      if(extensions.fieldInteractions[entity]) {
+        for(let index = 0; index < extensions.fieldInteractions[entity].length; index++) {
+          extensions.fieldInteractions[entity][index].script = injectScript(configuration, extensions.fieldInteractions[entity][index].script);
+        }
+      }
+    });
+  }
+
+  if(extensions.pageInteractions) {
+    for(let index = 0; index < extensions.pageInteractions.length; index++) {
+      extensions.pageInteractions[index].script = injectScript(configuration, extensions.pageInteractions[index].script);
+    }
+  }
+
+  jsonfile.writeFileSync(file, extensions, {
+    spaces: 2,
+  });
+
+  console.log('Successfully injected environment variables');
+
+  callback();
+}
+
 function auth(username, password, callback) {
   print(`bullhorn${cmdSuffix}`,  [ 'auth', 'login', `--username=${username}`, `--password=${password}` ], callback);
 }
@@ -71,10 +118,12 @@ try {
   clean(() => {
     build(() => {
       extract(() => {
-        auth(configuration.username, configuration.password, () => {
-          upload(() => {
-            console.log('Successfully uploaded!');
-          })
+        inject(configuration, () => {
+          auth(configuration.username, configuration.password, () => {
+            upload(() => {
+              console.log('Successfully uploaded!');
+            })
+          });
         });
       })
     });
