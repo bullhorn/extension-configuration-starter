@@ -1,11 +1,92 @@
 {
-  "name": "NAMESPACE-ExtensionName",
+  "name": "NAMESPACE-extensions",
   "fieldInteractions": {
+    "Candidate": [
+      "./dist/field-interactions/candidate/**"
+    ],
+    "ClientCorporation": [
+      "./dist/field-interactions/client-corporation/**"
+    ],
     "ClientContact": [
       "./dist/field-interactions/client-contact/**"
     ],
-    "ClientCorporation": [
-      "./dist/field-interactions/client-corporation/name/logger.js"
+    "CandidateEducation": [
+      "./dist/field-interactions/candidate-education/**"
+    ],
+    "JobOrder1": [
+      "./dist/field-interactions/job-order/track-1/**",
+      "./dist/field-interactions/job-order/all/**"
+    ],
+    "JobOrder2": [
+      "./dist/field-interactions/job-order/track-2/**",
+      "./dist/field-interactions/job-order/all/**"
+    ],
+    "JobOrder3": [
+      "./dist/field-interactions/job-order/track-3/**",
+      "./dist/field-interactions/job-order/all/**"
+    ],
+    "JobOrder4": [
+      "./dist/field-interactions/job-order/track-4/**",
+      "./dist/field-interactions/job-order/all/**"
+    ],
+    "JobOrder5": [
+      "./dist/field-interactions/job-order/track-5/**",
+      "./dist/field-interactions/job-order/all/**"
+    ],
+    "JobSubmission": [
+      "./dist/field-interactions/job-submission/**"
+    ],
+    "Lead": [
+      "./dist/field-interactions/lead/**"
+    ],
+    "Note": [
+      "./dist/field-interactions/note/**"
+    ],
+    "Opportunity1": [
+      "./dist/field-interactions/opportunity/track-1/**",
+      "./dist/field-interactions/opportunity/all/**"
+    ],
+    "Opportunity2": [
+      "./dist/field-interactions/opportunity/track-2/**",
+      "./dist/field-interactions/opportunity/all/**"
+    ],
+    "Opportunity3": [
+      "./dist/field-interactions/opportunity/track-3/**",
+      "./dist/field-interactions/opportunity/all/**"
+    ],
+    "Opportunity4": [
+      "./dist/field-interactions/opportunity/track-4/**",
+      "./dist/field-interactions/opportunity/all/**"
+    ],
+    "Opportunity5": [
+      "./dist/field-interactions/opportunity/track-5/**",
+      "./dist/field-interactions/opportunity/all/**"
+    ],
+    "Placement1": [
+      "./dist/field-interactions/placement/track-1/**",
+      "./dist/field-interactions/placement/all/**"
+    ],
+    "Placement2": [
+      "./dist/field-interactions/placement/track-2/**",
+      "./dist/field-interactions/placement/all/**"
+    ],
+    "Placement3": [
+      "./dist/field-interactions/placement/track-3/**",
+      "./dist/field-interactions/placement/all/**"
+    ],
+    "Placement4": [
+      "./dist/field-interactions/placement/track-4/**",
+      "./dist/field-interactions/placement/all/**"
+    ],
+    "Placement5": [
+      "./dist/field-interactions/placement/track-5/**",
+      "./dist/field-interactions/placement/all/**"
+    ],
+    "PlacementChangeRequest": [
+      "./dist/field-interactions/placement-change-request/**"
+    ],
+    "CandidateWorkHistory": [
+      "./dist/field-interactions/candidate-work-history/**"
     ]
   },
   "pageInteractions": [
