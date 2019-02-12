@@ -19,7 +19,7 @@ if(!fs.existsSync(fileName)) {
 
 const configuration = JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
 
-if(!configuration || !configuration.username || !configuration.password) {
+if(!configuration || ((!configuration.username || !configuration.password) && !configuration.users)) {
   console.log(`Configuration loaded does not have a username or password`, configuration);
 
   process.exit();
@@ -119,15 +119,27 @@ try {
     build(() => {
       extract(() => {
         inject(configuration, () => {
-          auth(configuration.username, configuration.password, () => {
-            upload(() => {
-              console.log('Successfully uploaded!');
-            })
-          });
+          if(configuration.username && configuration.password) {
+            auth(configuration.username, configuration.password, () => {
+              upload(() => {
+                console.log('Successfully uploaded!');
+              })
+            });
+          } else if(configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
+            configuration.users.forEach(user => {
+              auth(user.username, user.password, () => {
+                upload(() => {
+                  console.log('Successfully uploaded!');
+                })
+              });
+            });
+          }
         });
       })
     });
   });
 } catch(error) {
   console.error('Error occured during build-and-upload', error);
+
+  process.exit(1);
 }
