@@ -17,7 +17,7 @@
       * e.g. `"admin.usertype.id": "12,13,14"` will replace any occurences of `${admin.usertype.id}` with `12,13,14` 
       * Because of string interpolation in ES6, be sure to only use single quotes when injecting variables...`'`, not ``` ` ```
     - By default there is one environment file for prod and one for staging, with corresponding npm jobs
-      * The `deploy` job uses environment.prod.json, `deploy:staging` uses environment.staging.json
+      * The `deploy` job uses `environment.prod.json`, `deploy:staging` uses `environment.staging.json`
       * More environments can be added by adding new environment files and new npm jobs in `package.json`.  Copy an existing npm job and change the final parameter to the name of your environment
       * e.g. making a job
         ```
@@ -38,7 +38,7 @@
         - Running the corresponding job deploys all Field and Page Interactions to every users' Private Label in the file
         - In order to handle uniqueness within the Bullhorn database, the script will
           * Only deploy Page Interactions for the first user in the array
-          * Change the name of the extension being deployed to include the privateLabelId as part of the compilation process
+          * Change the name of the extension being deployed to include the privateLabelId 
           * e.g. this file will deploy all interactions for both Private Labels 22 and 33.  If the `extension.json` `name` parameter has a value of `myclient-interactions`, Private Label 22 will get an extension with name `myclient-22-interactions`, etc. 
             ```json
               {
