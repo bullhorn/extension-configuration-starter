@@ -197,6 +197,22 @@ function stripPageInteractions(callback) {
   callback();
 }
 
+function handleMultipleUsers(users, extensionId, callback) {
+  if(users.length === 0) {
+    callback();
+
+    return;
+  }
+
+  updatePrivateLabelId(extensionId, users[0].privateLabelId);
+
+  authAndUpload(users[0].username, users[0].password, () => {
+    console.log('Successfully uploaded field interactions for user ' + users[0].username);
+
+    handleMultipleUsers(users.slice(1), extensionId, callback);
+  });
+}
+
 try {
   clean(() => {
     build(() => {
@@ -218,12 +234,8 @@ try {
 
               if(additionalUsers && additionalUsers.length > 0) {
                 stripPageInteractions(() => {
-                  additionalUsers.forEach(user => {
-                    updatePrivateLabelId(extensionId, user.privateLabelId);
-
-                    authAndUpload(user.username, user.password, () => {
-                      console.log('Successfully uploaded field interactions for user ' + user.username);
-                    });
+                  handleMultipleUsers(additionalUsers, extensionId, () => {
+                    console.log('Successfully uploaded for all users.');
                   });
                 });
               }
