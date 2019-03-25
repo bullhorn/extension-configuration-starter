@@ -1,5 +1,5 @@
 interface PageInteraction {
-  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave';
+  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave' | 'add-edit-postsave';
   enabled?: boolean;
   name: string;
   page: 'record';
@@ -51,6 +51,7 @@ interface PageInteractionAPI {
   currentEntity: string;
   currentEntityId: string;
   currentEntityTrack: string;
+  pageContext: string;
   http: any;
   toastService: any;
   modalService: any;
