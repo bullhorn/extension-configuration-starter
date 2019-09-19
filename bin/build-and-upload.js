@@ -79,6 +79,19 @@ function getExtensionFile() {
   return fs.readFileSync(extensionsFileName, 'utf-8');
 }
 
+function clearCredentials() {
+  const homedir = os.homedir();
+  const authFile = path.join(homedir, '.bullhorn/credentials');
+
+  try {
+    fs.unlinkSync(authFile);
+
+    console.log('Successfully deleted credentials file');
+  } catch (err) {
+    console.log('No credentials file found')
+  }
+}
+
 function clean(callback) {
   print(`rimraf${cmdSuffix}`, [ 'output', 'dist' ], callback);
 }
@@ -214,6 +227,8 @@ function handleMultipleUsers(users, extensionId, callback) {
 }
 
 try {
+  clearCredentials();
+
   clean(() => {
     build(() => {
       extract(() => {
