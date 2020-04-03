@@ -9,7 +9,7 @@
     "deploy:staging": "node bin/build-and-upload.js staging"
   },
   "dependencies": {
-    "@bullhorn/bullhorn-cli": "^2.2.3",
+    "@bullhorn/bullhorn-cli": "^2.2.6",
     "rimraf": "^2.6.2",
     "tslint": "~5.10.0",
     "typescript": "~2.9.2"
