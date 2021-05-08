@@ -1,10 +1,8 @@
 const fs = require('fs');
 const spawn = require('child_process').spawn;
 const jsonfile = require('jsonfile');
-const os = require('os');
-const path=require('path');
 
-if(process.argv.length < 3) {
+if (process.argv.length < 3) {
   console.log('Please pass an environment argument to build.');
 
   process.exit();
@@ -13,7 +11,7 @@ if(process.argv.length < 3) {
 const environment = process.argv[2];
 const fileName = `./environments/environment.${environment}.json`;
 
-if(!fs.existsSync(fileName)) {
+if (!fs.existsSync(fileName)) {
   console.log(`Environment file with name ${fileName} does not exist...`);
 
   process.exit();
@@ -26,7 +24,7 @@ function hasUsernameAndPassword(configuration) {
 }
 
 function hasUsers(configuration) {
-  if(Array.isArray(configuration.users) && configuration.users.length > 0) {
+  if (Array.isArray(configuration.users) && configuration.users.length > 0) {
     const invalidUsers = configuration.users.filter(user => {
       return !user.username || !user.password || !user.privateLabelId;
     });
@@ -37,7 +35,7 @@ function hasUsers(configuration) {
   return false;
 }
 
-if(!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(configuration))) {
+if (!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(configuration))) {
   console.log(`Configuration should have either a username or password, or an array of users that each have a username, password, and privateLabelId`, configuration);
 
   process.exit();
@@ -60,8 +58,8 @@ function print(command, arguments, callback) {
     console.error(data.toString().replace(lineBreaks, ''));
   });
 
-  process.on('exit', ( code ) => {
-    if(code !== 0) {
+  process.on('exit', (code) => {
+    if (code !== 0) {
       console.error('Error performing process: exited with code ' + code);
     } else {
       callback();
@@ -72,7 +70,7 @@ function print(command, arguments, callback) {
 }
 
 function getExtensionFile() {
-  if(!fs.existsSync(extensionsFileName)) {
+  if (!fs.existsSync(extensionsFileName)) {
     console.error('Error performing extract command; cannot remove page interactions');
 
     process.exit(1);
@@ -81,21 +79,8 @@ function getExtensionFile() {
   return fs.readFileSync(extensionsFileName, 'utf-8');
 }
 
-function clearCredentials() {
-  const homedir = os.homedir();
-  const authFile = path.join(homedir, '.bullhorn/credentials');
-
-  try {
-    fs.unlinkSync(authFile);
-
-    console.log('Successfully deleted credentials file');
-  } catch (err) {
-    console.log('No credentials file found')
-  }
-}
-
 function clean(callback) {
-  print(`rimraf${cmdSuffix}`, [ 'output', 'dist' ], callback);
+  print(`rimraf${cmdSuffix}`, ['output', 'dist'], callback);
 }
 
 function build(callback) {
@@ -103,53 +88,75 @@ function build(callback) {
 }
 
 function extract(callback) {
-  print(`bullhorn${cmdSuffix}`, [ 'extensions', 'extract' ], callback);
+  print(`bullhorn${cmdSuffix}`, ['extensions', 'extract'], callback);
 }
 
 function injectScript(configuration, script) {
-  Object.keys(configuration).forEach( propertyName => {
-    script = script.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
+  Object.keys(configuration).forEach(propertyName => {
+    if (Array.isArray(script)) {
+      script = script.map(function (x) { return x.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]); });
+    }
+    else {
+      script = script.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
+    }
+
   });
 
   return script;
 }
 
+
 function inject(configuration, callback) {
   const file = getExtensionFile();
   const extensions = JSON.parse(file);
 
-  if(extensions.fieldInteractions) {
-    Object.keys(extensions.fieldInteractions).forEach( entity => {
-      if(extensions.fieldInteractions[entity]) {
-        for(let index = 0; index < extensions.fieldInteractions[entity].length; index++) {
+  if (extensions.fieldInteractions) {
+    Object.keys(extensions.fieldInteractions).forEach(entity => {
+      if (extensions.fieldInteractions[entity]) {
+        for (let index = 0; index < extensions.fieldInteractions[entity].length; index++) {
           extensions.fieldInteractions[entity][index].script = injectScript(configuration, extensions.fieldInteractions[entity][index].script);
+
+          if (extensions.fieldInteractions[entity][index].privateLabelIds) {
+            extensions.fieldInteractions[entity][index].privateLabelIds = injectScript(configuration, extensions.fieldInteractions[entity][index].privateLabelIds);
+          }
         }
+      }
+      if (entity.indexOf('CustomObject') !== -1 && extensions.fieldInteractions[entity]) {
+        if (!extensions.manuallyDeployed) {
+          extensions.manuallyDeployed = {};
+        }
+
+        extensions.manuallyDeployed[entity] = extensions.fieldInteractions[entity];
+        for (let index = 0; index < extensions.manuallyDeployed[entity].length; index++) {
+          extensions.manuallyDeployed[entity][index].script = injectScript(configuration, extensions.manuallyDeployed[entity][index].script);
+
+          if (extensions.manuallyDeployed[entity][index].privateLabelIds) {
+            extensions.manuallyDeployed[entity][index].privateLabelIds = injectScript(configuration, extensions.manuallyDeployed[entity][index].privateLabelIds);
+          }
+        }
+        delete extensions.fieldInteractions[entity];
       }
     });
   }
 
-  if(extensions.pageInteractions) {
-    for(let index = 0; index < extensions.pageInteractions.length; index++) {
+  if (extensions.pageInteractions) {
+    for (let index = 0; index < extensions.pageInteractions.length; index++) {
       extensions.pageInteractions[index].script = injectScript(configuration, extensions.pageInteractions[index].script);
     }
   }
 
-  jsonfile.writeFileSync(extensionsFileName, extensions, {
-    spaces: 2,
-  });
-
   console.log('Successfully injected environment variables');
+  callback(extensions);
 
-  callback();
 }
 
 function auth(username, password, callback) {
-  const auth = print(`bullhorn${cmdSuffix}`,  [ 'auth', 'login', `--username=${username}`, `--password=${password}` ], callback);
+  const auth = print(`bullhorn${cmdSuffix}`, ['auth', 'login', `--username=${username}`, `--password=${password}`], callback);
 
   auth.stdout.on('data', (data) => {
     const content = data.toString().replace(lineBreaks, '');
 
-    if(content.toLowerCase().indexOf('error') !== -1) {
+    if (content.toLowerCase().indexOf('error') !== -1) {
       console.log('Error occurred during authorization, exiting.');
 
       process.exit(1);
@@ -158,7 +165,7 @@ function auth(username, password, callback) {
 }
 
 function upload(callback) {
-  print(`bullhorn${cmdSuffix}`,  [ 'extensions', 'upload', '--force=true', '--skip=true' ], callback);
+  print(`bullhorn${cmdSuffix}`, ['extensions', 'upload', '--force=true', '--skip=true'], callback);
 }
 
 function authAndUpload(username, password, callback) {
@@ -180,7 +187,7 @@ function updatePrivateLabelId(extensionId, privateLabelId) {
 
   let newExtensionId = `${privateLabelId}-interactions`;
 
-  if(extensionId.indexOf('-interactions') > 0) {
+  if (extensionId.indexOf('-interactions') > 0) {
     const name = extensionId.substring(0, extensionId.indexOf('-interactions'));
 
     newExtensionId = `${name}-${privateLabelId}-interactions`;
@@ -195,11 +202,57 @@ function updatePrivateLabelId(extensionId, privateLabelId) {
   });
 }
 
+function removeUnnecessaryFieldInteractions(extensions, privateLabelId, callback) {
+  if (extensions.fieldInteractions) {
+    Object.keys(extensions.fieldInteractions).forEach(entity => {
+      if (extensions.fieldInteractions[entity]) {
+        for (var index = extensions.fieldInteractions[entity].length - 1; index >= 0; index--) {
+          if (extensions.fieldInteractions[entity][index].privateLabelIds && !extensions.fieldInteractions[entity][index].privateLabelIds.includes(privateLabelId)) {
+            console.log(`Removed unnecessary field interactions for PL ID ${privateLabelId} at index ${index}`);
+
+            extensions.fieldInteractions[entity].splice(index, 1);
+          }
+        }
+      }
+    });
+  }
+
+  console.log(`Successfully Removed All unnecessary field interactions for PL ID ${privateLabelId} before auth and upload`);
+
+  jsonfile.writeFileSync(extensionsFileName, extensions, {
+    spaces: 2,
+  });
+
+  callback(extensions);
+}
+
+function removeUnnecessaryCustomObjectInteractions(extensions, privateLabelId, callback) {
+  if (extensions.manuallyDeployed) {
+    Object.keys(extensions.manuallyDeployed).forEach(entity => {
+      if (extensions.manuallyDeployed[entity]) {
+        for (var index = extensions.manuallyDeployed[entity].length - 1; index >= 0; index--) {
+          if (extensions.manuallyDeployed[entity][index].privateLabelIds && !extensions.manuallyDeployed[entity][index].privateLabelIds.includes(privateLabelId)) {
+            console.log(`Removed unnecessary custom Object field interactions for PL ID ${privateLabelId} at index ${index}`);
+
+            extensions.manuallyDeployed[entity].splice(index, 1);
+          }
+        }
+      }
+    });
+  }
+
+  jsonfile.writeFileSync(extensionsFileName, extensions, {
+    spaces: 2,
+  });
+
+  callback();
+}
+
 function stripPageInteractions(callback) {
   const file = getExtensionFile();
   const extensions = JSON.parse(file);
 
-  if(extensions.pageInteractions) {
+  if (extensions.pageInteractions) {
     extensions.pageInteractions = [];
   }
 
@@ -212,57 +265,83 @@ function stripPageInteractions(callback) {
   callback();
 }
 
-function handleMultipleUsers(users, extensionId, callback) {
-  if(users.length === 0) {
+function handleMultipleUsers(users, doUploadPageInteraction, callback) {
+  if (users.length === 0) {
     callback();
 
     return;
   }
 
-  updatePrivateLabelId(extensionId, users[0].privateLabelId);
-
-  authAndUpload(users[0].username, users[0].password, () => {
-    console.log('Successfully uploaded field interactions for user ' + users[0].username);
-
-    handleMultipleUsers(users.slice(1), extensionId, callback);
-  });
-}
-
-try {
-  clearCredentials();
+  console.log('Upoading for ' + users[0].privateLabelId);
 
   clean(() => {
     build(() => {
       extract(() => {
-        inject(configuration, () => {
-          if(configuration.username && configuration.password) {
-            authAndUpload(configuration.username, configuration.password, () => {
-              console.log('Successfully uploaded!');
-            });
-          } else if(configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
-            const extensionId = getExtensionId();
+        const extensionId = getExtensionId();
 
-            updatePrivateLabelId(extensionId, configuration.users[0].privateLabelId);
+        inject(configuration, (extensions) => {
+          console.log('Private Label --> ' + users[0].privateLabelId);
 
-            authAndUpload(configuration.users[0].username, configuration.users[0].password, () => {
-              console.log('Successfully uploaded all interactions for user ' + configuration.users[0].username);
+          removeUnnecessaryFieldInteractions(extensions, users[0].privateLabelId, (extensions) => {
+            removeUnnecessaryCustomObjectInteractions(extensions, users[0].privateLabelId, () => {
 
-              const additionalUsers = configuration.users.slice(1);
+              if (doUploadPageInteraction) {
+                console.log('Deploy first PL with Page Interactions');
+                updatePrivateLabelId(extensionId, users[0].privateLabelId);
 
-              if(additionalUsers && additionalUsers.length > 0) {
+
+                authAndUpload(users[0].username, users[0].password, () => {
+                  console.log('Successfully uploaded all interactions for user ' + users[0].username);
+
+                  handleMultipleUsers(users.slice(1), false, callback);
+                });
+
+              } else {
+                console.log('Deploy the rest PL without Page Interactions');
                 stripPageInteractions(() => {
-                  handleMultipleUsers(additionalUsers, extensionId, () => {
-                    console.log('Successfully uploaded for all users.');
+                  updatePrivateLabelId(extensionId, users[0].privateLabelId);
+
+                  authAndUpload(users[0].username, users[0].password, () => {
+                    console.log('Successfully uploaded all interactions for user ' + users[0].username);
+
+                    handleMultipleUsers(users.slice(1), false, callback);
                   });
                 });
               }
             });
-          }
+          });
+
         });
       })
     });
   });
-} catch(error) {
+
+}
+
+try {
+  if (configuration.username && configuration.password && !Array.isArray(configuration.users)) {
+    console.log('Only one user Found');
+    clean(() => {
+      build(() => {
+        extract(() => {
+          inject(configuration, () => {
+            authAndUpload(configuration.username, configuration.password, () => {
+              console.log('Successfully uploaded!');
+            });
+          });
+        })
+      });
+    });
+  } else if (configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
+    console.log('A list of Users found');
+
+    handleMultipleUsers(configuration.users, true, () => {
+      console.log('Successfully uploaded for all users.');
+    });
+
+
+  }
+} catch (error) {
   console.error('Error occured during build-and-upload', error);
 
   process.exit(1);

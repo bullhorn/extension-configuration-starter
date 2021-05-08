@@ -88,7 +88,7 @@ interface FieldInteractionAPI {
   readonly currentEntityId: string;
   readonly isEdit: boolean;
   readonly isAdd: boolean;
-  globals: any;
+  globals: FieldInteractionGlobals;
   currentKey: string;
   appBridge: any;
   isActiveControlValid(): boolean;
@@ -174,4 +174,42 @@ interface FieldInteractionAPI {
   addControl(key: string, metaForNewField: any, position?: string, initialValue?: any): void;
   removeControl(key: string): void;
   debounce(func: () => void, wait?: number): void;
+}
+
+interface FieldInteractionGlobals {
+  entitlements: any;
+  settings: FieldInteractionSettings;
+  user: FieldInteractionUser;
+}
+
+interface FieldInteractionSettings {
+  allDeptIds: Array<number>;
+  allPrivateLabelIds: Array<IdName>;
+  corporationId: number;
+  corporationName: string;
+  privateLabelId: IdName;
+  userDepartments: Array<IdName>;
+}
+
+interface FieldInteractionUser {
+  allPrivateLabelIds: Array<number>;
+  corporationId: number;
+  corporationName: string;
+  dataCenterId: number;
+  email: string;
+  firstName: string;
+  isSReleaseULEnabled: boolean;
+  lastName: string;
+  locale: string;
+  masterUserId: number;
+  name: string;
+  privateLabelId: number;
+  userId: number;
+  userTypeId: number;
+  username: string;
+}
+
+interface IdName {
+  id: number;
+  name: string;
 }

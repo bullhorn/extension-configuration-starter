@@ -10,6 +10,9 @@
 # dependencies
 /node_modules
 
+# hooks
+/.husky
+
 # IDEs and editors
 /.idea
 .project
