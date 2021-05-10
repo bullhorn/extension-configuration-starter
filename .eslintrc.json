@@ -1,0 +1,97 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": ["airbnb-base"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 12
+  },
+  "plugins": ["@typescript-eslint"],
+  "globals": {
+    "FieldInteraction": false,
+    "FieldInteractionAPI": false,
+    "PageInteraction": false,
+    "PageInteractionAPI": false
+  },
+  "rules": {
+    "linebreak-style": 0,
+    "global-require": 0,
+    "eslint linebreak-style": [0, "error", "windows"],
+
+    // BEST PRACTISES
+    // "no-console": ["error", { "allow": ["warn", "error", "info"] }],
+    "no-console": "off",
+    "curly": "error",
+    "dot-notation": "warn",
+    "quotes": ["error", "single"],
+    "max-len": ["error", { "code": 180 ,"ignoreUrls": true }],
+    "no-debugger": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-dupe-else-if": "error",
+    "no-else-return": "warn",
+    //"no-eq-null": "warn",
+    "no-floating-decimal": "error",
+    "no-implicit-coercion": [ "warn", {
+      "boolean": true,
+      "number": true,
+      "string": true
+    }],
+    "no-implied-eval": "error",
+    "no-loop-func": "error",
+    "no-magic-numbers": ["warn", {"ignore":[0,1,-1,10]}],
+    "no-multi-spaces": "error",
+    "no-multi-str": "warn",
+    "no-new-func": "error",
+    "no-new-wrappers": "warn",
+    "no-new": "error",
+    "no-octal-escape": "error",
+    "no-param-reassign": ["error", { "props": false }],
+    "no-redeclare": ["error",{ "builtinGlobals": true }],
+    "no-restricted-globals":["error",
+    {
+        "name": "isNaN",
+        "message": "Use typeof value === 'number' instead"
+    }],
+    "no-return-assign": "error",
+    "no-self-compare": "error",
+    "no-template-curly-in-string": "warn",
+    "no-unused-expressions": "error",
+    "no-unused-vars": "warn",
+    "no-useless-concat": "error",
+    "no-warning-comments": [ "warn", {
+      "terms": [ "TODO", "FIXME" ],
+      "location": "anywhere"
+    }],
+    "wrap-iife": [ "error", "outside" ],
+    "yoda": "error",
+    "no-shadow": ["error"],
+    "no-undef-init": "off",
+    "object-shorthand": "off", // to change it when we move to ES6
+    "guard-for-in": "warn",
+    "eqeqeq": ["error", "smart"],
+    "indent": ["error", 2, { "FunctionDeclaration": {"body": 1, "parameters": 2},"flatTernaryExpressions": true, "ignoreComments":true }],
+    "block-scoped-var": "warn",
+    "radix": ["error", "as-needed"],
+
+    // ECMAScript 6 support
+    "arrow-body-style": [ "error", "always" ],
+    "arrow-parens": [ "error", "as-needed", { "requireForBlockBody": true } ],
+    "arrow-spacing": [ "error", { "before": true, "after": true }],
+    "no-const-assign": "error",
+    "no-var": "warn",
+    "prefer-template": "warn",
+    "prefer-destructuring": "off",
+
+    // Stylistic - everything here is a warning because of style.
+    "array-bracket-spacing": [ "warn", "always" ],
+    "block-spacing": [ "warn", "always" ],
+    "brace-style": [ "warn", "1tbs", { "allowSingleLine": false } ],
+    "camelcase":  "warn",
+    "comma-spacing": [  "warn", { "before": false, "after": true } ],
+    "comma-style": [  "warn", "last"],
+    "semi": ["error", "always"]
+  }
+}

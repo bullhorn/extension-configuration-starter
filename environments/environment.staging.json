@@ -1,5 +1,9 @@
 {
-  "username": "",
-  "password": "",
-  "privateLabelId": ""
+  "users": [
+    {
+      "username": "",
+      "password": "",
+      "privateLabelId": ""
+    }
+  ]
 }

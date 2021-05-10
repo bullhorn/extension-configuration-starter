@@ -5,14 +5,15 @@
 ## Usage
 
 1. Fork this repository
-2. Update `name` property in `extension.json`
-3. Replace the files inside `src` with your own
+2. Run `npm install` once
+3. Update `repository` property in `extension.json`
+4. Replace the files inside `src` with your own
    - Field Interactions should live in `src/field-interactions/{entity-name}/{field-name}/*`
      * e.g. `src/field-interactions/candidate/custom-text-1/my-interactions.ts`
    - Page Interactions should live in `src/page-interactions/record/{page-interaction-type}/*`
      * e.g. `src/page-interactions/add-edit-presave/my-interaction.ts`
    - You can check the `/extension.json` file to confirm the specific directories/patterns used to retrieve files
-4.  Populate your environment files
+5.  Populate your environment files
     - You can add arbitrary application parameters to these files, which will be injected into all extracted interactions
       * e.g. `"admin.usertype.id": "12,13,14"` will replace any occurences of `${admin.usertype.id}` with `12,13,14` 
       * Because of string interpolation in ES6, be sure to only use single quotes when injecting variables...`'`, not ``` ` ```
@@ -24,15 +25,7 @@
           "deploy:qa": "node bin/build-and-upload.js qa"
         ```
         will expect a file `environment.qa.json` to exist in the `environments` folder
-    - There are two options for configuring an environment file
-      * you can provide a `username` and `password` parameter.  Running the corresponding job will deploy all interactions to the Private Label for the user provided in `username` (Note: Page Interactions are Corporation specific, so they get deployed to every Private Label always)
-        - e.g. 
-        ```json
-          {
-            "username": "my.username",
-            "password": "myPassword123"
-          }
-        ```
+    - Configure your users that will be used to deploy your interactions
       * you can provide an array of `users`
         - each user object should have a `username`, `password`, and `privateLabelId` parameter
         - Running the corresponding job deploys all Field and Page Interactions to every users' Private Label in the file
@@ -56,3 +49,5 @@
                 ] 
               }
             ```
+6. In case you want eslint rules to fix a specific file for you then run `eslint --fix ${relative_path}`.
+  * e.g. `eslint --fix src/field-interactions/candidate/custom-text-1/my-interactions.ts`
