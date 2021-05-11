@@ -36,6 +36,9 @@
     "JobSubmission": [
       "./dist/field-interactions/job-submission/**"
     ],
+    "Sendout": [
+      "./dist/field-interactions/sendout/**"
+    ],
     "Lead": [
       "./dist/field-interactions/lead/**"
     ],

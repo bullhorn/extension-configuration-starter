@@ -80,6 +80,7 @@ interface FieldInteraction {
   invokeOnInit: boolean;
   sortOrder: number;
   script: Function;
+  privateLabelIds?: Array<string>;
 }
 
 interface FieldInteractionAPI {
