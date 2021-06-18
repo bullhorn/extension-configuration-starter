@@ -1,3 +1,6 @@
+const os = require('os');
+const path = require('path');
+
 const fs = require('fs');
 const spawn = require('child_process').spawn;
 const jsonfile = require('jsonfile');
