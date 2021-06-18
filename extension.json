@@ -4,14 +4,20 @@
     "Candidate": [
       "./dist/field-interactions/candidate/**"
     ],
+    "CandidateEducation": [
+      "./dist/field-interactions/candidate-education/**"
+    ],
+    "CandidateReference": [
+      "./dist/field-interactions/candidate-reference/**"
+    ],
+    "CandidateWorkHistory": [
+      "./dist/field-interactions/candidate-work-history/**"
+    ],
     "ClientCorporation": [
       "./dist/field-interactions/client-corporation/**"
     ],
     "ClientContact": [
       "./dist/field-interactions/client-contact/**"
-    ],
-    "CandidateEducation": [
-      "./dist/field-interactions/candidate-education/**"
     ],
     "JobOrder1": [
       "./dist/field-interactions/job-order/track-1/**",
@@ -87,9 +93,6 @@
     ],
     "PlacementChangeRequest": [
       "./dist/field-interactions/placement-change-request/**"
-    ],
-    "CandidateWorkHistory": [
-      "./dist/field-interactions/candidate-work-history/**"
     ]
   },
   "pageInteractions": [
