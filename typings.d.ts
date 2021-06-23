@@ -154,7 +154,7 @@ interface FieldInteractionAPI {
     isCloseable?: boolean;
     customClass?: string;
   }): void;
-  displayTip(key: string, tip: string, icon?: string, allowDismiss?: boolean): void;
+  displayTip(key: string, tip: string, icon?: string, allowDismiss?: boolean, sanitize?: boolean): void;
   confirmChanges(key: string, message?: string): Promise<boolean>;
   promptUser(key: string, changes: string[]): Promise<boolean>;
   setProperty(key: string, prop: string, value: any): void;
