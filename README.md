@@ -6,7 +6,7 @@
 
 1. Fork this repository
 2. Run `npm install` once
-3. Update `repository` property in `extension.json`
+3. Update `repository` property in `extension.json` and `name` property in `package.json`
 4. Replace the files inside `src` with your own
    - Field Interactions should live in `src/field-interactions/{entity-name}/{field-name}/*`
      * e.g. `src/field-interactions/candidate/custom-text-1/my-interactions.ts`

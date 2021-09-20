@@ -1,6 +1,6 @@
 const interaction: FieldInteraction = {
   fieldName: 'name',
-  name: 'PS-Adecco Log Me!',
+  name: 'PS-Template Log Me!',
   event: 'init',
   sortOrder: 1,
   invokeOnInit: true,
