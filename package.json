@@ -1,7 +1,7 @@
 {
   "repository": "extension-configuration-starter",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
     "lint": "eslint --ext .ts . --format table",

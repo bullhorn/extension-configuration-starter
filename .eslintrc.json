@@ -12,8 +12,13 @@
   "globals": {
     "FieldInteraction": false,
     "FieldInteractionAPI": false,
+    "FieldInteractionGlobals": false,
+    "FieldInteractionSettings": false,
+    "FieldInteractionUser": false,
     "PageInteraction": false,
-    "PageInteractionAPI": false
+    "PageInteractionAPI": false,
+    "NovoOverviewField": false,
+    "NovoRecordTab": false
   },
   "rules": {
     "linebreak-style": 0,
