@@ -1,12 +1,21 @@
 const fs = require('fs');
 const spawn = require('child_process').spawn;
+const execSync = require('child_process').execSync;
 const jsonfile = require('jsonfile');
+const os = require('os');
+const path=require('path');
 
 if (process.argv.length < 3) {
   console.log('Please pass an environment argument to build.');
 
   process.exit();
 }
+
+const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
+const extensionsFileName = `./output/extension.json`;
+const lineBreaks = /(?:\r\n|\r|\n)/g;
+const PROD_BRANCH = "master"
+const PROD_ENVIRONMENT = "prod"
 
 const environment = process.argv[2];
 const fileName = `./environments/environment.${environment}.json`;
@@ -41,9 +50,28 @@ if (!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(confi
   process.exit();
 }
 
-const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
-const extensionsFileName = `./output/extension.json`;
-const lineBreaks = /(?:\r\n|\r|\n)/g;
+/**
+ * 1. If deploying to production, verifies that working directory is on master branch.
+ * 2. Verifies that there are no modified files in working directory.
+ */
+function prodDeployChecks() {
+  const gitBranchResult = execSync('git branch --show-current');
+  const currentBranch = gitBranchResult.toString().replace(lineBreaks, '');
+
+  if (currentBranch !== PROD_BRANCH) {
+    console.error(`ERROR: Only allowed to deploy to production when on master branch. Current Branch => "${currentBranch}"`);
+    process.exit();
+  }
+
+  const gitStatusResult = execSync('git status --short');
+  const gitStatus = gitStatusResult.toString();
+
+  if (gitStatus !== '') {
+    console.error(`Not allowed to deploy to production when there are uncommitted files in working directory:\n${gitStatus}`);
+    process.exit();
+  }
+  console.log('Git Checks for production passed!');
+}
 
 function print(command, arguments, callback) {
   const process = spawn(command, arguments);
@@ -319,6 +347,9 @@ function handleMultipleUsers(users, doUploadPageInteraction, callback) {
 }
 
 try {
+  if (environment === PROD_ENVIRONMENT) {
+    prodDeployChecks();
+  }
   if (configuration.username && configuration.password && !Array.isArray(configuration.users)) {
     console.log('Only one user Found');
     clean(() => {
