@@ -63,13 +63,6 @@ function prodDeployChecks() {
     process.exit();
   }
 
-  const gitStatusResult = execSync('git status --short');
-  const gitStatus = gitStatusResult.toString();
-
-  if (gitStatus !== '') {
-    console.error(`Not allowed to deploy to production when there are uncommitted files in working directory:\n${gitStatus}`);
-    process.exit();
-  }
   console.log('Git Checks for production passed!');
 }
 
