@@ -51,8 +51,7 @@ if (!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(confi
 }
 
 /**
- * 1. If deploying to production, verifies that working directory is on master branch.
- * 2. Verifies that there are no modified files in working directory.
+ * If deploying to production, verifies that the working directory is on the master branch.
  */
 function prodDeployChecks() {
   const gitBranchResult = execSync('git branch --show-current');
