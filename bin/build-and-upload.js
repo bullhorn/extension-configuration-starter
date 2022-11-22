@@ -3,7 +3,7 @@ const spawn = require('child_process').spawn;
 const execSync = require('child_process').execSync;
 const jsonfile = require('jsonfile');
 const os = require('os');
-const path=require('path');
+const path = require('path');
 
 if (process.argv.length < 3) {
   console.log('Please pass an environment argument to build.');
@@ -14,7 +14,6 @@ if (process.argv.length < 3) {
 const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
 const extensionsFileName = `./output/extension.json`;
 const lineBreaks = /(?:\r\n|\r|\n)/g;
-const PROD_BRANCH = "master"
 const PROD_ENVIRONMENT = "prod"
 
 const environment = process.argv[2];
@@ -54,11 +53,15 @@ if (!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(confi
  * If deploying to production, verifies that the working directory is on the master branch.
  */
 function prodDeployChecks() {
-  const gitBranchResult = execSync('git branch --show-current');
-  const currentBranch = gitBranchResult.toString().replace(lineBreaks, '');
+  const currentCommitHash = execSync('git rev-parse HEAD').toString().replace(lineBreaks, '');
+  const masterCommitHash = execSync('git rev-parse remotes/origin/master').toString().replace(lineBreaks, '');
 
-  if (currentBranch !== PROD_BRANCH) {
-    console.error(`ERROR: Only allowed to deploy to production when on master branch. Current Branch => "${currentBranch}"`);
+  console.log(`Attempting to deploy commit: ${currentCommitHash.toString()}`);
+
+  if (currentCommitHash !== masterCommitHash) {
+    const currentBranch = execSync(`git branch -a --contains ${currentCommitHash}`).toString();
+    console.error(`ERROR: Commit hash ${currentCommitHash} does not match master commit for PROD deploy ${masterCommitHash}`);
+    console.error(`ERROR: Git detected possible deploy coming from one of following branches:\n${currentBranch}`);
     process.exit();
   }
 
@@ -119,12 +122,10 @@ function injectScript(configuration, script) {
     else {
       script = script.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
     }
-
   });
 
   return script;
 }
-
 
 function inject(configuration, callback) {
   const file = getExtensionFile();
@@ -352,7 +353,7 @@ try {
               console.log('Successfully uploaded!');
             });
           });
-        })
+        });
       });
     });
   } else if (configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
@@ -361,8 +362,6 @@ try {
     handleMultipleUsers(configuration.users, true, () => {
       console.log('Successfully uploaded for all users.');
     });
-
-
   }
 } catch (error) {
   console.error('Error occured during build-and-upload', error);
