@@ -1,0 +1,56 @@
+{
+  "Candidate":
+  [
+      {"extentionName": "person-custom-object-1", "objectNumber": 1},
+      {"extentionName": "person-custom-object-2", "objectNumber": 2},
+      {"extentionName": "person-custom-object-3", "objectNumber": 3},
+      {"extentionName": "person-custom-object-5", "objectNumber": 5},
+      {"extentionName": "person-custom-object-6", "objectNumber": 6},
+      {"extentionName": "person-custom-object-10", "objectNumber": 10},
+      {"extentionName": "person-custom-object-11", "objectNumber": 11},
+      {"extentionName": "person-custom-object-12", "objectNumber": 12},
+      {"extentionName": "person-custom-object-13", "objectNumber": 13},
+      {"extentionName": "person-custom-object-14", "objectNumber": 14},
+      {"extentionName": "person-custom-object-15", "objectNumber": 15},
+      {"extentionName": "person-custom-object-16", "objectNumber": 16},
+      {"extentionName": "person-custom-object-17", "objectNumber": 17},
+      {"extentionName": "person-custom-object-18", "objectNumber": 18},
+      {"extentionName": "person-custom-object-19", "objectNumber": 19},
+      {"extentionName": "person-custom-object-20", "objectNumber": 20},
+      {"extentionName": "person-custom-object-22", "objectNumber": 22},
+      {"extentionName": "person-custom-object-23", "objectNumber": 23},
+      {"extentionName": "person-custom-object-24", "objectNumber": 24},
+      {"extentionName": "person-custom-object-25", "objectNumber": 25},
+      {"extentionName": "person-custom-object-26", "objectNumber": 26},
+      {"extentionName": "person-custom-object-27", "objectNumber": 27},
+      {"extentionName": "person-custom-object-28", "objectNumber": 28}
+  ],
+  "ClientCorporation":
+  [
+      {"extentionName": "client-corporation-custom-object-3", "objectNumber": 3},
+      {"extentionName": "client-corporation-custom-object-9", "objectNumber": 9},
+      {"extentionName": "client-corporation-custom-object-11", "objectNumber": 11},
+      {"extentionName": "client-corporation-custom-object-12", "objectNumber": 12},
+      {"extentionName": "client-corporation-custom-object-13", "objectNumber": 13},
+      {"extentionName": "client-corporation-custom-object-14", "objectNumber": 14},
+      {"extentionName": "client-corporation-custom-object-15", "objectNumber": 15},
+      {"extentionName": "client-corporation-custom-object-16", "objectNumber": 16}
+  ],
+  "JobOrder":
+  [
+      {"extentionName": "job-order-custom-object-2", "objectNumber": 2},
+      {"extentionName": "job-order-custom-object-3", "objectNumber": 3},
+      {"extentionName": "job-order-custom-object-5", "objectNumber": 5},
+      {"extentionName": "job-order-custom-object-8", "objectNumber": 8},
+      {"extentionName": "job-order-custom-object-10", "objectNumber": 10}
+  ],
+  "Placement":
+  [
+      {"extentionName": "placement-custom-object-2", "objectNumber": 2},
+      {"extentionName": "placement-custom-object-3", "objectNumber": 3},
+      {"extentionName": "placement-custom-object-4", "objectNumber": 4},
+      {"extentionName": "placement-custom-object-5", "objectNumber": 5},
+      {"extentionName": "placement-custom-object-8", "objectNumber": 8},
+      {"extentionName": "placement-custom-object-10", "objectNumber": 10}
+  ]
+}

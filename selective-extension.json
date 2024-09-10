@@ -1,0 +1,49 @@
+{
+    "name": "manpower-france-interactions",
+    "fieldInteractions": {
+        "Candidate": {
+            "fields": [
+                {
+                    "fieldName": "customDate4",
+                    "fieldInterationNames": [
+                        "hide-field_CDC-351",
+                        "add-field-test",
+                        "add-field-test2"
+                    ]
+                }
+            ]
+        },
+        "ClientCorporation": {
+            "fields": [
+                {
+                    "fieldName": "status",
+                    "fieldInterationNames": [
+                        "add-field-test"
+                    ]
+                }
+            ]
+        }
+    },
+    "customObjectsFieldInteractions": {
+        "person-custom-object-5": {
+            "fields": [
+                {
+                    "fieldName": "date1",
+                    "fieldInterationNames": [
+                        "age-to-work_CDC-1334",
+                        "add-field-test",
+                        "add-field-test2"
+                    ]
+                }
+            ]
+        }
+    },
+    "pageInteractions": {
+        "action-modify": [
+            "hide-action-dropdown"
+        ],
+        "overview-field-modify": [
+            "disable-all-candidate-fields_CDC-3971"
+        ]
+    }
+}

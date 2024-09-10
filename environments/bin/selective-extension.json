@@ -1,0 +1,32 @@
+{
+  "name": "qps-interactions",
+  "fieldInteractions": {
+    "Candidate": {
+      "fields": [
+        {
+          "fieldName": "status",
+          "fieldInteractionNames": [
+            "set-fields-read-only_SOLEN-1624"
+          ]
+        }
+      ]
+    }
+  },
+  "customObjectsFieldInteractions": {
+    "person-custom-object-17": {
+      "fields": [
+        {
+          "fieldName": "text7",
+          "fieldInteractionNames": [
+            "mark-read-only"
+          ]
+        }
+      ]
+    }
+  },
+  "pageInteractions": {
+    "add-edit-postsave": [
+      "candidate-add-integration-values_PS-23074"
+    ]
+  }
+}
