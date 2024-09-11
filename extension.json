@@ -1,11 +1,20 @@
 {
   "name": "NAMESPACE-extensions",
   "fieldInteractions": {
+    "BillingProfile": [
+      "./dist/field-interactions/billing-profile/**"
+    ],
     "Candidate": [
       "./dist/field-interactions/candidate/**"
     ],
+    "CandidateCertification": [
+      "./dist/field-interactions/candidate-certification/**"
+    ],
     "CandidateEducation": [
       "./dist/field-interactions/candidate-education/**"
+    ],
+    "CandidateList": [
+      "./dist/field-interactions/candidate-list/**"
     ],
     "CandidateReference": [
       "./dist/field-interactions/candidate-reference/**"
@@ -13,11 +22,59 @@
     "CandidateWorkHistory": [
       "./dist/field-interactions/candidate-work-history/**"
     ],
-    "ClientCorporation": [
+    "ClientCorporation1": [
       "./dist/field-interactions/client-corporation/**"
     ],
-    "ClientContact": [
-      "./dist/field-interactions/client-contact/**"
+    "ClientCorporation2": [
+      "./dist/field-interactions/client-corporation/track-2/**",
+      "./dist/field-interactions/client-corporation/all/**"
+    ],
+    "ClientCorporation3": [
+      "./dist/field-interactions/client-corporation/track-3/**",
+      "./dist/field-interactions/client-corporation/all/**"
+    ],
+    "ClientCorporation4": [
+      "./dist/field-interactions/client-corporation/track-4/**",
+      "./dist/field-interactions/client-corporation/all/**"
+    ],
+    "ClientCorporation5": [
+      "./dist/field-interactions/client-corporation/track-5/**",
+      "./dist/field-interactions/client-corporation/all/**"
+    ],
+    "ClientCorporationRateAgreementCardLine": [
+      "./dist/field-interactions/client-corporation-rate-agreement-card-line/**"
+    ],
+    "ClientContact1": [
+      "./dist/field-interactions/client-contact/track-1/**",
+      "./dist/field-interactions/client-contact/all/**"
+    ],
+    "ClientContact2": [
+      "./dist/field-interactions/client-contact/track-2/**",
+      "./dist/field-interactions/client-contact/all/**"
+    ],
+    "ClientContact3": [
+      "./dist/field-interactions/client-contact/track-3/**",
+      "./dist/field-interactions/client-contact/all/**"
+    ],
+    "ClientContact4": [
+      "./dist/field-interactions/client-contact/track-4/**",
+      "./dist/field-interactions/client-contact/all/**"
+    ],
+    "ClientContact5": [
+      "./dist/field-interactions/client-contact/track-5/**",
+      "./dist/field-interactions/client-contact/all/**"
+    ],
+    "ClientContactList": [
+      "./dist/field-interactions/client-contact-list/**"
+    ],
+    "EarnCode": [
+      "./dist/field-interactions/earn-code/**"
+    ],
+    "FederalTaxForm": [
+      "./dist/field-interactions/federal-tax-form/**"
+    ],
+    "JobCode": [
+      "./dist/field-interactions/job-code/**"
     ],
     "JobOrder1": [
       "./dist/field-interactions/job-order/track-1/**",
@@ -39,17 +96,32 @@
       "./dist/field-interactions/job-order/track-5/**",
       "./dist/field-interactions/job-order/all/**"
     ],
+    "JobOrderRateCard": [
+      "./dist/field-interactions/job-order-rate-card/**"
+    ],
+    "JobOrderRateCardLine": [
+      "./dist/field-interactions/job-order-rate-card-line/**"
+    ],
     "JobSubmission": [
       "./dist/field-interactions/job-submission/**"
     ],
-    "Sendout": [
-      "./dist/field-interactions/sendout/**"
+    "InvoiceTerm": [
+      "./dist/field-interactions/invoice-term/**"
     ],
     "Lead": [
       "./dist/field-interactions/lead/**"
     ],
+    "LocalTaxForm": [
+      "./dist/field-interactions/local-tax-form/**"
+    ],
+    "LocationVersion": [
+      "./dist/field-interactions/location/**"
+    ],
     "Note": [
       "./dist/field-interactions/note/**"
+    ],
+    "NovoTaxInfo": [
+      "./dist/field-interactions/novo-tax-info/**"
     ],
     "Opportunity1": [
       "./dist/field-interactions/opportunity/track-1/**",
@@ -93,9 +165,29 @@
     ],
     "PlacementChangeRequest": [
       "./dist/field-interactions/placement-change-request/**"
+    ],
+    "PlacementRateCard": [
+      "./dist/field-interactions/placement-rate-card/**"
+    ],
+    "PlacementRateCardLine": [
+      "./dist/field-interactions/placement-rate-card-line/**"
+    ],
+    "Sendout": [
+      "./dist/field-interactions/sendout/**"
+    ],
+    "StateTaxForm": [
+      "./dist/field-interactions/state-tax-form/**"
     ]
   },
-  "pageInteractions": [
+  "customObjectFieldInteractions": {
+    "client-corporation-custom-object-1": [
+      "./dist/custom-objects/client-corporation-custom-object-1/**"
+    ],
+    "client-corporation-custom-object-4": [
+      "./dist/custom-objects/client-corporation-custom-object-4/**"
+    ]
+  },
+ "pageInteractions": [
     "./dist/page-interactions/record/modify-tabs/hide-all.js",
     "./dist/page-interactions/record/modify-overview-fields/dumb.js"
   ]

@@ -1,7 +1,7 @@
 {
   "repository": "extension-configuration-starter",
   "license": "MIT",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
     "lint": "eslint --ext .ts . --format table",
@@ -10,8 +10,10 @@
     "precommit:script": "husky add .husky/pre-commit \"npm run pre-commit\"",
     "commit-msg:script": "husky add .husky/commit-msg \"npx --no-install commitlint --edit \"$1\"\"",
     "prepare": "husky install && npm run precommit:script && npm run commit-msg:script",
-    "deploy": "node bin/build-and-upload.js prod",
-    "deploy:staging": "node bin/build-and-upload.js staging"
+    "full-deploy:prod": "node bin/full-build-and-upload.js prod",
+    "selective-deploy:prod": "node bin/selective-build-and-upload.js prod",
+    "full-deploy:staging": "node bin/full-build-and-upload.js staging",
+    "selective-deploy:staging": "node bin/selective-build-and-upload.js staging"
   },
   "lint-staged": {
     "*.ts": [
@@ -21,7 +23,9 @@
   "dependencies": {
     "@bullhorn/bullhorn-cli": "^2.2.6",
     "rimraf": "^2.7.1",
-    "typescript": "~3.5.3"
+    "typescript": "~3.5.3",
+    "winston": "^3.9.0"
+
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.1",
