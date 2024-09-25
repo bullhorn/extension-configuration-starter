@@ -4,9 +4,12 @@
 
 ## Usage
 
-1. Fork this repository
+1. Clone this repository
 2. Run `npm install` once
-3. Update `repository` property in `extension.json` and `name` property in `package.json`
+3. Update
+   - `description` and `repository` properties in `package.json`
+   - `name` property in `extension.json`
+   - `name` property in `selective-extension.json`
 4. Replace the files inside `src` with your own
    - Field Interactions should live in `src/field-interactions/{entity-name}/{field-name}/*`
      * e.g. `src/field-interactions/candidate/custom-text-1/my-interactions.ts`
@@ -17,14 +20,10 @@
     - You can add arbitrary application parameters to these files, which will be injected into all extracted interactions
       * e.g. `"admin.usertype.id": "12,13,14"` will replace any occurences of `${admin.usertype.id}` with `12,13,14` 
       * Because of string interpolation in ES6, be sure to only use single quotes when injecting variables...`'`, not ``` ` ```
+      * e.g. adminUserTypeId: '${admin.usertype.id}'
     - By default there is one environment file for prod and one for staging, with corresponding npm jobs
       * The `deploy` job uses `environment.prod.json`, `deploy:staging` uses `environment.staging.json`
-      * More environments can be added by adding new environment files and new npm jobs in `package.json`.  Copy an existing npm job and change the final parameter to the name of your environment
-      * e.g. making a job
-        ```
-          "deploy:qa": "node bin/build-and-upload.js qa"
-        ```
-        will expect a file `environment.qa.json` to exist in the `environments` folder
+      * More environments can be added by adding new environment files and new npm jobs in `package.json`.
     - Configure your users that will be used to deploy your interactions
       * you can provide an array of `users`
         - each user object should have a `username`, `password`, and `privateLabelId` parameter
@@ -55,7 +54,7 @@
 7. Set up the script deploy script
     * To set up the script add the lines to the scripts section in your package.json
     ```
-    "selective-deploy:<env name>": "node bin/selective-build-and-upload.js <env name>selective",
+    "selective-deploy:<env name>": "node bin/selective-build-and-upload.js <env name> selective",
     "full-deploy:<env name>": "node bin/full-build-and-upload.js <env name> selective"
     ```
     * make sure the env name match the names given in your environment files
@@ -78,7 +77,7 @@
     * for each section you need to follow the format. You can delete the fieldInteractions/ customObjectsFieldInteractions / pageInteractions objects if you don’t wish to deploy any
     ```
     {
-      "name": "manpower-france-interactions",
+      "name": "<client name>-interactions",
       "fieldInteractions": {
         "Candidate": {
             "fields": [
