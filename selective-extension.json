@@ -29,7 +29,7 @@
             "fields": [
                 {
                     "fieldName": "date1",
-                    "fieldInterationNames": [
+                    "fieldInteractionNames": [
                         "age-to-work_CDC-1334",
                         "add-field-test",
                         "add-field-test2"
