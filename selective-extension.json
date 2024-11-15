@@ -1,11 +1,11 @@
 {
-    "name": "manpower-france-interactions",
+    "name": "extension-configuration-starter",
     "fieldInteractions": {
         "Candidate": {
             "fields": [
                 {
                     "fieldName": "customDate4",
-                    "fieldInterationNames": [
+                    "fieldInteractionNames": [
                         "hide-field_CDC-351",
                         "add-field-test",
                         "add-field-test2"
@@ -17,7 +17,7 @@
             "fields": [
                 {
                     "fieldName": "status",
-                    "fieldInterationNames": [
+                    "fieldInteractionNames": [
                         "add-field-test"
                     ]
                 }

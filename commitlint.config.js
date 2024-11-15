@@ -5,6 +5,7 @@ module.exports = {
     'type-empty': [0],
     'subject-empty': [0],
     'type-enum': [0],
+    'body-max-line-length': [0],
     'function-rules/type-enum': [
       2,
       'always',

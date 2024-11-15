@@ -23,9 +23,9 @@
   "dependencies": {
     "@bullhorn/bullhorn-cli": "^2.2.6",
     "rimraf": "^2.7.1",
+    "tslint": "~5.10.0",
     "typescript": "~3.5.3",
     "winston": "^3.9.0"
-
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.1",

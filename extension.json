@@ -1,5 +1,5 @@
 {
-  "name": "NAMESPACE-extensions",
+  "name": "extension-configuration-starter",
   "fieldInteractions": {
     "BillingProfile": [
       "./dist/field-interactions/billing-profile/**"
@@ -185,6 +185,15 @@
     ],
     "client-corporation-custom-object-4": [
       "./dist/custom-objects/client-corporation-custom-object-4/**"
+    ],
+    "person-custom-object-2": [
+      "./dist/custom-objects/person-custom-object-2/**"
+    ],
+    "person-custom-object-3": [
+      "./dist/custom-objects/person-custom-object-3/**"
+    ],
+    "job-order-custom-object-2": [
+      "./dist/custom-objects/job-order-custom-object-2/**"
     ]
   },
  "pageInteractions": [
