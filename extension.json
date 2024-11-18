@@ -1,5 +1,5 @@
 {
-  "name": "NAMESPACE-extensions",
+  "name": "extension-configuration-starter",
   "fieldInteractions": {
     "BillingProfile": [
       "./dist/field-interactions/billing-profile/**"
@@ -22,6 +22,9 @@
     "CandidateWorkHistory": [
       "./dist/field-interactions/candidate-work-history/**"
     ],
+    "ClientCorporation": [
+      "./dist/field-interactions/client-corporation/**"
+    ],
     "ClientCorporation1": [
       "./dist/field-interactions/client-corporation/**"
     ],
@@ -43,6 +46,9 @@
     ],
     "ClientCorporationRateAgreementCardLine": [
       "./dist/field-interactions/client-corporation-rate-agreement-card-line/**"
+    ],
+    "ClientContact": [
+      "./dist/field-interactions/client-contact/**"
     ],
     "ClientContact1": [
       "./dist/field-interactions/client-contact/track-1/**",
@@ -185,6 +191,15 @@
     ],
     "client-corporation-custom-object-4": [
       "./dist/custom-objects/client-corporation-custom-object-4/**"
+    ],
+    "person-custom-object-2": [
+      "./dist/custom-objects/person-custom-object-2/**"
+    ],
+    "person-custom-object-3": [
+      "./dist/custom-objects/person-custom-object-3/**"
+    ],
+    "job-order-custom-object-2": [
+      "./dist/custom-objects/job-order-custom-object-2/**"
     ]
   },
  "pageInteractions": [

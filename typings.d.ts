@@ -15,10 +15,10 @@ interface ToastOptions {
   customClass?: string;
 }
 interface PageInteraction {
-  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave' | 'add-edit-postsave';
+  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave' | 'add-edit-postsave' | 'column-link-validation';
   enabled?: boolean;
   name: string;
-  page: 'record';
+  page: 'record' | 'list';
   script: Function;
   sortOrder: number;
 }
@@ -211,6 +211,7 @@ interface FieldInteractionSettings {
 }
 
 interface FieldInteractionUser {
+  userPrimaryDepartmentId: number;
   allPrivateLabelIds: Array<number>;
   corporationId: number;
   corporationName: string;
