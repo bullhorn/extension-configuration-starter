@@ -23,7 +23,7 @@ function setUpService(debug) {
 }
 
 function cleanUpScriptString(script) {
-  return script.replace(/((?:function)?\s?\((\w+[,]?\s?)+\)\s?(?:=>)?\s?{((.|\n|\r)*(?=}))})?/, '$3').trim();
+  return script.replace(/((?:function)?(?:script)?\s?\((\w+[,]?\s?)+\)\s?(?:=>)?\s?{((.|\n|\r)*(?=}))})?/, '$3').trim();
 }
 
 const extract = (callback) => {
