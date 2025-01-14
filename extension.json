@@ -1,5 +1,5 @@
 {
-  "name": "extension-configuration-starter",
+  "name": "NAMESPACE-extensions",
   "fieldInteractions": {
     "BillingProfile": [
       "./dist/field-interactions/billing-profile/**"
