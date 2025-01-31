@@ -76,7 +76,12 @@ function deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, ex
                     uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach(interaction => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interaction.name === fi.name && fieldKey === fi.fieldName);
                       if (extensionFI) {
-                        promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
+                        const {privateLabelIds} = extensionFI;
+                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                          promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
+                        } else {
+                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                        }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interaction.name}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
                         results.push(resultsSvc.handleUpdateFIFail(entity, fieldKey, interactionName,
@@ -92,7 +97,12 @@ function deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, ex
                     uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach(interactionName => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interactionName === fi.name && fieldKey === fi.fieldName);
                       if (extensionFI) {
-                        promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
+                        const {privateLabelIds} = extensionFI;
+                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                          promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
+                        } else {
+                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                        }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
                         results.push(resultsSvc.handleAddFIFail(entity, fieldKey, interactionName,
@@ -177,7 +187,11 @@ function deployAllFieldInteractions(privateLabelId, extensions) {
                     uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach(interaction => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
                       if (extensionFI) {
-                        promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
+                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                          promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
+                        } else {
+                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                        }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interaction.name}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
                         results.push(resultsSvc.handleUpdateFIFail(entity, fieldKey, interaction.name,
@@ -193,7 +207,11 @@ function deployAllFieldInteractions(privateLabelId, extensions) {
                     uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach(interactionName => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
                       if (extensionFI) {
-                        promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
+                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                          promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
+                        } else {
+                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                        }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
                         results.push(resultsSvc.handleAddFIFail(entity, fieldKey, interactionName,
