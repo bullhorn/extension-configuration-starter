@@ -187,6 +187,7 @@ function deployAllFieldInteractions(privateLabelId, extensions) {
                     uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach(interaction => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
                       if (extensionFI) {
+                        const {privateLabelIds} = extensionFI;
                         if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
                           promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
                         } else {
