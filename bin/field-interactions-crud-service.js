@@ -34,9 +34,10 @@ function setUpService(debug, rest) {
   resultsSvc.setUpService(debug);
 }
 
-function fecthFieldInteractionData(url, entity) {
+function fecthFieldInteractionData(url, params, entity) {
   return fetch(url, {
-    method: 'GET'
+    method: 'POST',
+    body: JSON.stringify(params)
   }).then(response => response.json())
     .then(result => {
       logger.data(`FieldInteraction Data url: ${url}`);
@@ -61,8 +62,14 @@ function getFieldMapInstances(fieldInteractions, privateLabelId) {
     }
     entityQuery += fieldQueries.join(') OR ');
     entityQuery += `))) AND privateLabel = ${privateLabelId}` ;
-    const url = `${restUrl}/query/FieldMapInstance?BhRestToken=${restToken}&fields=id,entity,columnName&where=${entityQuery}&orderBy=id&start=0&count=500`;
-    promiseList.push(fecthFieldInteractionData(url, entity.entityName));
+    const params = {
+      where: entityQuery,
+      fields: 'id,entity,columnName',
+      orderBy: 'id',
+      start: 0,
+      count: 500
+    }
+    promiseList.push(fecthFieldInteractionData(`${restUrl}/query/FieldMapInstance?BhRestToken=${restToken}`, params, entity.entityName));
   }
   return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
 }
@@ -73,8 +80,14 @@ function getFieldInteractions(fieldInteractions, privateLabelId) {
     let fieldQueries = '('
     fieldQueries += entity.fields.map(field =>`(fieldMapID = ${field.fieldMapId} AND name in ('${field.fieldInteractionNames.join('\',\'')}')`).join(') OR ');
     fieldQueries += `)) AND privateLabelID = ${privateLabelId}`;
-    const url = `${restUrl}/query/FieldMapInteraction?BhRestToken=${restToken}&fields=id,name,fieldMapID,fieldName,entity&where=${fieldQueries}&orderBy=id&start=0&count=500`;    
-    promiseList.push(fecthFieldInteractionData(url, entity.entityName));
+    const params = {
+      where: fieldQueries,
+      fields: 'id,name,fieldMapID,fieldName,entity',
+      orderBy: 'id',
+      start: 0,
+      count: 500
+    };
+    promiseList.push(fecthFieldInteractionData(`${restUrl}/query/FieldMapInteraction?BhRestToken=${restToken}`, params, entity.entityName));
   }
   return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
 }

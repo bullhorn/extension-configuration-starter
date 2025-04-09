@@ -32,9 +32,10 @@ function setUpService(debug, rest) {
   resultsSvc.setUpService(debug);
 }
 
-function fecthPageInteractionData(url) {
+function fecthPageInteractionData(url, params) {
   return fetch(url, {
-    method: 'GET'
+    method: 'POST',
+    body: JSON.stringify(params),
   }).then(response => response.json())
     .then(result => {
       logger.data(`PageInteraction Data url: ${url}`);
@@ -52,7 +53,14 @@ function getPageinteractions(selectivePIActions) {
   Object.entries(selectivePIActions).forEach(([piKey, piVal]) => {
     piQuery = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`
     const url = `${restUrl}/query/PageInteraction?BhRestToken=${restToken}&fields=id,name,action&where=${piQuery}&orderBy=id&start=0&count=500`;
-    promiseList.push(fecthPageInteractionData(url));
+    const params = {
+      where: piQuery,
+      fields: 'id,name,action',
+      orderBy: 'id',
+      start: 0,
+      count: 500
+    }
+    promiseList.push(fecthPageInteractionData(url, params));
   });
   return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
 }

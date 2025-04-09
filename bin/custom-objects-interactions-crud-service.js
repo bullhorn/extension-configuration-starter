@@ -34,9 +34,10 @@ function setUpService(debug, rest) {
   resultsSvc.setUpService(debug);
 }
 
-function fecthCustomObjectData(url, entity) {
+function fecthCustomObjectData(url, params, entity) {
   return fetch(url, {
-    method: 'GET'
+    method: 'POST',
+    body: JSON.stringify(params),
   }).then(response => response.json())
     .then(result => {
       logger.data(`get Custom Object Data ${url}`);
@@ -71,8 +72,14 @@ function getCustomObjectInstances(coQueryConfigs) {
           whereQueries.push(entityQuery);
         }
         const finalWhereQuery = `${whereQueries.join(') OR ')})`;
-        const url = `${restUrl}/query/${objUrl}?BhRestToken=${restToken}&fields=id,objectNumber&where=${finalWhereQuery}&orderBy=id&start=0&count=500`;
-        promiseList.push(fecthCustomObjectData(url, entity));
+        const params = {
+          where: finalWhereQuery,
+          fields: 'id,objectNumber',
+          orderBy: 'id',
+          start: 0,
+          count: 500
+        }
+        promiseList.push(fecthCustomObjectData(`${restUrl}/query/${objUrl}?BhRestToken=${restToken}`, params, entity));
       }
     });
   });
@@ -102,8 +109,14 @@ function getCustomObjectsFields(coQueryConfigs) {
           whereQueries.push(entityQuery);
         }
         const finalWhereQuery = `${whereQueries.join(') OR ')})`;
-        const url = `${restUrl}/query/${objUrl}Attribute?BhRestToken=${restToken}&fields=id,customObject(id),columnName&where=${finalWhereQuery}&orderBy=id&start=0&count=500`;
-        promiseList.push(fecthCustomObjectData(url, entity));
+        const params = {
+          fields: 'id,customObject(id),columnName',
+          where: finalWhereQuery,
+          orderBy: 'id',
+          start: '0',
+          count: '500'
+        }
+        promiseList.push(fecthCustomObjectData(`${restUrl}/query/${objUrl}Attribute?BhRestToken=${restToken}`, params, entity));
       }
     });
   });
@@ -129,8 +142,14 @@ function getCustomObjectFieldInteractions(coQueryConfigs) {
           }));
         });
         const finalWhereQuery = `${whereQueries.join(' OR ')}`;
-        const url = `${restUrl}/query/${objUrl}AttributeInteraction?BhRestToken=${restToken}&fields=id,attribute(id),name&where=${finalWhereQuery}&orderBy=id&start=0&count=500`;
-        promiseList.push(fecthCustomObjectData(url, entity));
+        const params = {
+          where: finalWhereQuery,
+          fields: 'id,attribute(id),name',
+          orderBy: 'id',
+          start: 0,
+          count: 500
+        }
+        promiseList.push(fecthCustomObjectData(`${restUrl}/query/${objUrl}AttributeInteraction?BhRestToken=${restToken}`, params, entity));
       }
     });
   });
