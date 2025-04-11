@@ -52,7 +52,6 @@ function getPageinteractions(selectivePIActions) {
   const promiseList = [];
   Object.entries(selectivePIActions).forEach(([piKey, piVal]) => {
     piQuery = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`
-    const url = `${restUrl}/query/PageInteraction?BhRestToken=${restToken}&fields=id,name,action&where=${piQuery}&orderBy=id&start=0&count=500`;
     const params = {
       where: piQuery,
       fields: 'id,name,action',
@@ -60,7 +59,7 @@ function getPageinteractions(selectivePIActions) {
       start: 0,
       count: 500
     }
-    promiseList.push(fecthPageInteractionData(url, params));
+    promiseList.push(fecthPageInteractionData(`${restUrl}/query/PageInteraction?BhRestToken=${restToken}`, params));
   });
   return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
 }
