@@ -101,7 +101,7 @@ function deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, ex
                         if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
                           promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
                         } else {
-                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                          logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
                         }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
@@ -161,7 +161,7 @@ function deployAllFieldInteractions(privateLabelId, extensions) {
       Object.values(fullCOConfig).forEach(fcVal => {
         const entityFieldMaps = fieldMapInstnaces.filter(entityFieldMap => entityFieldMap.entity === fcVal.entityName);
         for (const fcfield of fcVal.fields) {
-          const fieldMapIntance = entityFieldMaps.find(fieldMap => fieldMap.columnName.toLowerCase() === fcfield.fieldName.toLowerCase()) 
+          const fieldMapIntance = entityFieldMaps.find(fieldMap => fieldMap.columnName.toLowerCase() === fcfield.fieldName.toLowerCase())
           if (fieldMapIntance) {
             fcfield.fieldMapId = fieldMapIntance.id;
           } else {
@@ -208,10 +208,11 @@ function deployAllFieldInteractions(privateLabelId, extensions) {
                     uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach(interactionName => {
                       const extensionFI = extensions.fieldInteractions[entity].find(fi => interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
                       if (extensionFI) {
+                        const {privateLabelIds} = extensionFI;
                         if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
                           promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
                         } else {
-                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                          logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
                         }
                       } else {
                         logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
