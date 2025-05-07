@@ -137,7 +137,7 @@ function deploySelectedCOFieldInteractions(selectiveExtensions, extensions) {
                           if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
                             promiseList.push(custObjInteRestSvc.AddFieldInteraction(extensionFI, entity, extentionCO, fieldKey, uploadConfig[extentionCO].toAdd[fieldKey].fieldMapId, interactionName, objectUrl));
                           } else {
-                            logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                            logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
                           }
                         } else {
                           logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
@@ -288,7 +288,7 @@ function deployAllCOFieldInteractions(extensions) {
                           if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
                             promiseList.push(custObjInteRestSvc.AddFieldInteraction(extensionFI, entity, extentionCO, fieldKey, uploadConfig[extentionCO].toAdd[fieldKey].fieldMapId, interactionName, objectUrl));
                           } else {
-                            logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
+                            logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
                           }
                         } else {
                           logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
