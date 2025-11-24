@@ -1,32 +1,32 @@
 {
   "name": "extension-configuration-starter",
   "fieldInteractions": {
-    "Candidate": {
+    "ClientContact1": {
       "fields": [
         {
-          "fieldName": "status",
+          "fieldName": "customText1",
           "fieldInteractionNames": [
-            "set-fields-read-only_SOLEN-1624"
+            "PS-Template Custom Logger"
           ]
         }
       ]
     }
   },
-  "customObjectsFieldInteractions": {
-    "person-custom-object-17": {
+  "customObjectFieldInteractions": {
+    "job-order-custom-object-2": {
       "fields": [
         {
-          "fieldName": "text7",
+          "fieldName": "text2",
           "fieldInteractionNames": [
-            "mark-read-only"
+            "JCO2_text2_example"
           ]
         }
       ]
     }
   },
   "pageInteractions": {
-    "add-edit-postsave": [
-      "candidate-add-integration-values_PS-23074"
+    "overview-field-modify": [
+      "PS-Template Modify Overview Fields"
     ]
   }
 }

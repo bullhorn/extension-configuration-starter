@@ -6,6 +6,7 @@
 /tmp
 /output
 /out-tsc
+/deploy-logs
 
 # dependencies
 /node_modules
@@ -13,14 +14,18 @@
 # hooks
 /.husky
 
-# IDEs and editors
+# IDEs, editors, AI tools, and other temporary/local configuration files
 /.idea
 .project
 .classpath
 .c9/
 *.launch
 .settings/
+.claude/
 *.sublime-workspace
+*.iml
+package-lock.json
+yarn.lock
 
 # IDE - VSCode
 .vscode/*
@@ -37,6 +42,11 @@
 npm-debug.log
 testem.log
 /typings
+/extracted
+/bin/extract-field-interactions.js
+/bin/extract-page-interactions.js
+/selective-extension.json
+latest-*-interactions*.json
 
 # e2e
 /e2e/*.js

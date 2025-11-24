@@ -14,8 +14,9 @@ interface ToastOptions {
   isCloseable?: boolean;
   customClass?: string;
 }
+
 interface PageInteraction {
-  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave' | 'add-edit-postsave' | 'column-link-validation';
+  action: 'tab-modify' | 'action-modify' | 'overview-field-modify' | 'workflow-modify' | 'activity-section-modify' | 'workflow-section-modify' | 'add-edit-presave' | 'add-edit-postsave' | 'list-post-load' | 'column-link-validation';
   enabled?: boolean;
   name: string;
   page: 'record' | 'list';
@@ -49,6 +50,7 @@ interface NovoOverviewField {
   required: boolean;
   readOnly: boolean;
   multiValue: boolean;
+  className: string;
   inputType?: string;
   options?: [{ value: string, label: string }];
   optionsType: string;
@@ -64,11 +66,12 @@ interface PageInteractionAPI {
     user: any;
   };
   appBridge: any;
+  pageDK: any;
   currentEntity: string;
   currentEntityId: string;
   currentEntityTrack: string;
-  pageContext: string;
   subEntity: string;
+  pageContext: string;
   http: any;
   toastService: any;
   modalService: any;
@@ -91,94 +94,112 @@ interface FieldInteraction {
   privateLabelIds?: Array<string>;
 }
 
+interface FieldInteractionEvent {
+  controlKey: string;
+  prop: string;
+  value: any;
+}
+
 interface FieldInteractionAPI {
-  hideFieldSetHeader(key: string): void;
-  associations: any;
   form: any;
+  appBridge: any;
+  toaster: any;
+  modalService: any;
+  formUtils: any;
+  http: any;
+  labels: any;
+  associations: { [ key: string ]: any };
   readonly currentEntity: string;
   readonly currentEntityId: string;
   readonly isEdit: boolean;
   readonly isAdd: boolean;
-  http: any;
   globals: FieldInteractionGlobals;
   currentKey: string;
   isInvokedOnInit: boolean;
-  appBridge: any;
   isActiveControlValid(): boolean;
-  mutatePickerConfig(key: string, options: any): any;
   getActiveControl(): any;
   getActiveKey(): string;
   getActiveValue(): any;
   getActiveInitialValue(): any;
-  getFieldSet(key: string): any;
-  getControl(key: string): any;
-  getFormGroupArray(key: string): any[];
-  getValue(key: string): any;
-  getRawValue(key: string): any;
-  getInitialValue(key: string): any;
+  getFieldSet(key: string, otherForm?: any): any;
+  getControl(key: string, otherForm?: any): any;
+  getFormGroupArray(key: string, otherForm?: any): any[];
+  getValue(key: string, otherForm?: any): any;
+  getRawValue(key: string, otherForm?: any): any;
+  getInitialValue(key: string, otherForm?: any): any;
   setValue(key: string, value: any, options?: {
     onlySelf?: boolean;
     emitEvent?: boolean;
     emitModelToViewChange?: boolean;
     emitViewToModelChange?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   patchValue(key: string, value: any, options?: {
     onlySelf?: boolean;
     emitEvent?: boolean;
     emitModelToViewChange?: boolean;
     emitViewToModelChange?: boolean;
-  }): void;
-  setReadOnly(key: string, isReadOnly: boolean): void;
-  setRequired(key: string, required: boolean): void;
-  setDescription(key: string, description: string): void;
-  highlight(key: string, isHighlighted: boolean): void;
-  hide(key: string, clearValue?: boolean): void;
-  show(key: string): void;
+  }, otherForm?: any): void;
+  setReadOnly(key: string, isReadOnly: boolean, otherForm?: any): void;
+  setRequired(key: string, required: boolean, otherForm?: any): void;
+  setDescription(key: string, description: string, otherForm?: any): void;
+  highlight(key: string, isHighlighted: boolean, otherForm?: any): void;
+  hide(key: string, clearValue?: boolean, otherForm?: any): void;
+  show(key: string, otherForm?: any): void;
   hideFieldSetHeader(key: string): void;
   showFieldSetHeader(key: string): void;
   disable(key: string, options?: {
     onlySelf?: boolean;
     emitEvent?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   enable(key: string, options?: {
     onlySelf?: boolean;
     emitEvent?: boolean;
-  }): void;
-  markAsInvalid(key: string, validationMessage?: string): void;
-  markAsValid(key: string): void;
+  }, otherForm?: any): void;
+  markAsInvalid(key: string, validationMessage?: string, otherForm?: any): void;
+  markAsValid(key: string, otherForm?: any): void;
   markAsDirty(key: string, options?: {
     onlySelf?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   markAsPending(key: string, options?: {
     onlySelf?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   markAsPristine(key: string, options?: {
     onlySelf?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   markAsTouched(key: string, options?: {
     onlySelf?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   markAsUntouched(key: string, options?: {
     onlySelf?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   updateValueAndValidity(key: string, options?: {
     onlySelf?: boolean;
     emitEvent?: boolean;
-  }): void;
+  }, otherForm?: any): void;
   displayToast(toastConfig: ToastOptions): void;
-  displayTip(key: string, tip: string, icon?: string, allowDismiss?: boolean, sanitize?: boolean): void;
-  clearTip(key: string): void;
-  setTooltip(key: string, tooltip: string): void;
+  displayTip(key: string, tip: string, icon?: string, allowDismiss?: boolean, sanitize?: boolean, otherForm?: any): void;
+  clearTip(key: string, otherForm?: any): void;
+  setTooltip(key: string, tooltip: string, otherForm?: any): void;
+  setPopOver(key: string, popover: {
+    title?: string,
+    content?: string,
+    htmlContent?: string,
+    placement?: 'left' | 'right' | 'top' | 'bottom',
+    onHover?: boolean,
+    always?: boolean,
+    disabled?: boolean,
+    animation?: boolean,
+    dismissTimeout?: number,
+  }, otherForm?: any): void;
   confirmChanges(key: string, message?: string): Promise<boolean>;
   promptUser(key: string, changes: string[]): Promise<boolean>;
-  setProperty(key: string, prop: string, value: any): void;
-  getProperty(key: string, prop: string): any;
+  setProperty(key: string, prop: string, value: any, otherForm?: any): void;
+  getProperty(key: string, prop: string, otherForm?: any): any;
   isValueEmpty(key: string): boolean;
   isValueBlank(key: string): boolean;
-  hasField(key: string): boolean;
-  addStaticOption(key: string, newOption: any): void;
-  removeStaticOption(key: string, optionToRemove: string): void;
-  addPropertiesToPickerConfig(key: string, properties: { [key: string]: unknown }, otherForm?: unknown): void;
+  hasField(key: string, otherForm?: any): boolean;
+  addStaticOption(key: string, newOption: any, otherForm?: any): void;
+  removeStaticOption(key: string, optionToRemove: string, otherForm?: any): void;
   modifyPickerConfig(key: string, config: {
     format?: string;
     minSearchLength?: number;
@@ -189,10 +210,14 @@ interface FieldInteractionAPI {
     options?: any[];
     resultsTemplateType?: 'entity-picker';
   }, mapper?: Function): void;
-  setLoading(key: string, loading: boolean): void;
-  addControl(key: string, metaForNewField: any, position?: string, initialValue?: any): void;
-  removeControl(key: string): void;
+  mutatePickerConfig(key: string, options: any, mapper?: Function, otherForm?: any): any;
+  addPropertiesToPickerConfig(key: string, properties: { [key: string]: unknown }, otherForm?: any): void;
+  setLoading(key: string, loading: boolean, otherForm?: any): void;
+  addControl(key: string, metaForNewField: any, position?: string, initialValue?: any, otherForm?: any): void;
+  removeControl(key: string, otherForm?: any): void;
   debounce(func: () => void, wait?: number): void;
+  getParent(otherForm?: any): any;
+  getIndex(otherForm?: any): any;
 }
 
 interface FieldInteractionGlobals {
@@ -211,7 +236,6 @@ interface FieldInteractionSettings {
 }
 
 interface FieldInteractionUser {
-  userPrimaryDepartmentId: number;
   allPrivateLabelIds: Array<number>;
   corporationId: number;
   corporationName: string;
@@ -227,6 +251,9 @@ interface FieldInteractionUser {
   userId: number;
   userTypeId: number;
   username: string;
+  userTypeName: string;
+  departmentName: string;
+  userPrimaryDepartmentId: number;
 }
 
 interface IdName {

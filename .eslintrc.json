@@ -31,7 +31,8 @@
     "curly": "error",
     "dot-notation": "warn",
     "quotes": ["error", "single"],
-    "max-len": ["error", { "code": 180 ,"ignoreUrls": true }],
+    "quote-props": ["warn", "consistent"],
+    "max-len": ["warn", { "code": 240 ,"ignoreUrls": true }],
     "no-debugger": "error",
     "no-constant-condition": "error",
     "no-control-regex": "error",
@@ -83,7 +84,7 @@
 
     // ECMAScript 6 support
     "arrow-body-style": [ "error", "always" ],
-    "arrow-parens": [ "error", "as-needed", { "requireForBlockBody": true } ],
+    "arrow-parens": [ "warn", "as-needed", { "requireForBlockBody": true } ],
     "arrow-spacing": [ "error", { "before": true, "after": true }],
     "no-const-assign": "error",
     "no-var": "warn",

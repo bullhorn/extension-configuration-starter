@@ -1,49 +1,32 @@
 {
-    "name": "extension-configuration-starter",
-    "fieldInteractions": {
-        "Candidate": {
-            "fields": [
-                {
-                    "fieldName": "customDate4",
-                    "fieldInteractionNames": [
-                        "hide-field_CDC-351",
-                        "add-field-test",
-                        "add-field-test2"
-                    ]
-                }
-            ]
-        },
-        "ClientCorporation": {
-            "fields": [
-                {
-                    "fieldName": "status",
-                    "fieldInteractionNames": [
-                        "add-field-test"
-                    ]
-                }
-            ]
+  "name": "extension-configuration-starter",
+  "fieldInteractions": {
+    "ClientCorporation1": {
+      "fields": [
+        {
+          "fieldName": "name",
+          "fieldInteractionNames": [
+            "PS-Template Log Me!"
+          ]
         }
-    },
-    "customObjectsFieldInteractions": {
-        "person-custom-object-5": {
-            "fields": [
-                {
-                    "fieldName": "date1",
-                    "fieldInteractionNames": [
-                        "age-to-work_CDC-1334",
-                        "add-field-test",
-                        "add-field-test2"
-                    ]
-                }
-            ]
-        }
-    },
-    "pageInteractions": {
-        "action-modify": [
-            "hide-action-dropdown"
-        ],
-        "overview-field-modify": [
-            "disable-all-candidate-fields_CDC-3971"
-        ]
+      ]
     }
+  },
+  "customObjectFieldInteractions": {
+    "person-custom-object-2": {
+      "fields": [
+        {
+          "fieldName": "text1",
+          "fieldInteractionNames": [
+            "PCO2_text1_example"
+          ]
+        }
+      ]
+    }
+  },
+  "pageInteractions": {
+    "overview-field-modify": [
+      "PS-Template Modify Overview Fields"
+    ]
+  }
 }
