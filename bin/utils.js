@@ -3,5 +3,5 @@ function onlyUnique(value, index, array) {
 }
 
 module.exports = {
-  onlyUnique
+  onlyUnique,
 };

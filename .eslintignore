@@ -13,3 +13,6 @@ typings.d.ts
 ./husky
 commitlint.config.js
 
+# bin folder - deployment scripts (JavaScript, not TypeScript)
+/bin/**
+

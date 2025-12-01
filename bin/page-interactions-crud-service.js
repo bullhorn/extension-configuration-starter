@@ -2,121 +2,116 @@ const chalk = require('chalk');
 const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
-let apiClient;
+class PageInteractionsCrudService {
+  constructor(restApiClient) {
+    this.apiClient = restApiClient;
+    this.logger = logger;
+    this.resultsSvc = resultsSvc;
+  }
 
-function setUpService(restApiClient) {
-  apiClient = restApiClient;
-}
+  fetchPageInteractionData(entityType, where, fields) {
+    return this.apiClient.queryAll(entityType, where, fields)
+      .then((result) => {
+        this.logger.piData(`Query ${entityType}: where: ${where}, fields: ${fields}`);
+        this.logger.piData(`Query ${entityType} response: ${JSON.stringify(result)}`);
 
-function fetchPageInteractionData(entityType, where, fields) {
-  return apiClient.queryAll(entityType, where, fields)
-    .then(result => {
-      logger.piData(`Query ${entityType}: where: ${where}, fields: ${fields}`);
-      logger.piData(`Query ${entityType} response: ${JSON.stringify(result)}`);
+        return Promise.resolve(result);
+      }).catch((error) => {
+        this.logger.error(chalk.red(error));
+      });
+  }
 
-      return Promise.resolve(result);
-    }).catch(error => {
-      logger.error(chalk.red(error));
+  getPageInteractions(selectivePIActions) {
+    const promiseList = [];
+
+    Object.entries(selectivePIActions).forEach(([ piKey, piVal ]) => {
+      const where = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`;
+      const fields = 'id,name,action';
+
+      promiseList.push(this.fetchPageInteractionData('PageInteraction', where, fields));
     });
-}
 
-function getPageInteractions(selectivePIActions) {
-  const promiseList = [];
+    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+  }
 
-  Object.entries(selectivePIActions).forEach(([piKey, piVal]) => {
-    const where = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`
+  getAllPageInteractions(username) {
+    const where = `modifyingUser.username='${username}'`;
     const fields = 'id,name,action';
 
-    promiseList.push(fetchPageInteractionData('PageInteraction', where, fields));
-  });
+    return this.apiClient.queryAll('PageInteraction', where, fields)
+      .then((result) => {
+        this.logger.piData(`Query Page Interaction url: query/PageInteraction, where: ${where}, fields: ${fields}`);
+        this.logger.piData(`Query Page Interaction response: ${JSON.stringify(result)}`);
 
-  return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
-}
+        return Promise.resolve(result.data);
+      }).catch((error) => {
+        this.logger.error(chalk.red(error));
+      });
+  }
 
-function getAllPageInteractions(username) {
-  const where = `modifyingUser.username='${username}'`;
-  const fields = 'id,name,action';
+  addPageInteraction(PI, action, pageInteraction) {
+    this.logger.debug(`Adding Page Interaction: name: '${pageInteraction}', PI: ${JSON.stringify(PI)}`);
+    let resCode;
 
-  return apiClient.queryAll('PageInteraction', where, fields)
-    .then(result => {
-      logger.piData(`Query Page Interaction url: query/PageInteraction, where: ${where}, fields: ${fields}`);
-      logger.piData(`Query Page Interaction response: ${JSON.stringify(result)}`);
+    return this.apiClient.insertEntity('PageInteraction', PI).then((response) => {
+      resCode = response.status;
 
-      return Promise.resolve(result.data);
-    }).catch(error => {
-      logger.error(chalk.red(error));
+      return response.json();
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData('Add Page Interaction url: entity/PageInteraction');
+      this.logger.piData(`Add Page Interaction payload: ${JSON.stringify(PI)}`);
+      this.logger.piData(`Add Page Interaction result: ${formattedResponse}`);
+
+      return Promise.resolve(this.resultsSvc.createPIAddResult(action, pageInteraction, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make Insert Page Interaction call with error: ${error}`));
     });
+  }
+
+  updatePageInteraction(PI, action, pageInteraction) {
+    this.logger.debug(`Updating Page Interaction: #${pageInteraction.id}, name: ${pageInteraction.name}, pageInteraction: ${JSON.stringify(pageInteraction)}`);
+    let resCode;
+
+    return this.apiClient.updateEntity('PageInteraction', pageInteraction.id, PI).then((response) => {
+      resCode = response.status;
+
+      return response.json();
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData(`Update Page Interaction url: entity/PageInteraction/${pageInteraction.id}`);
+      this.logger.piData(`Update Page Interaction payload: ${JSON.stringify(PI)}`);
+      this.logger.piData(`Update Page Interaction result: ${formattedResponse}`);
+
+      return Promise.resolve(this.resultsSvc.createPIUpdateResult(action, pageInteraction, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make Update Page Interaction call with error: ${error}`));
+    });
+  }
+
+  deletePageInteraction(id, action, interactionName) {
+    this.logger.debug(`Deleting Page Interaction #${id}, name: '${interactionName}'`);
+    let resCode;
+
+    return this.apiClient.deleteEntity('PageInteraction', id).then((response) => {
+      resCode = response.status;
+
+      return response.json();
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData(`Delete Page Interaction url: entity/PageInteraction/${id}`);
+      this.logger.piData(`Delete Page Interaction  response: ${formattedResponse}`);
+      return Promise.resolve(this.resultsSvc.createPIDeleteResult(action, { name: interactionName, id: id }, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make delete Page Interaction  call with error: ${error}`));
+    });
+  }
 }
 
-function addPageInteraction(PI, action, pageInteraction) {
-  logger.debug(`Adding Page Interaction: name: '${pageInteraction}', PI: ${JSON.stringify(PI)}`);
-  let resCode;
-
-  return apiClient.insertEntity('PageInteraction', PI).then(response => {
-    resCode = response.status;
-
-    return response.json()
-  }).then(result => {
-    const formattedResponse = JSON.stringify(result);
-    logger.piData(`Add Page Interaction url: entity/PageInteraction`);
-    logger.piData(`Add Page Interaction payload: ${JSON.stringify(PI)}`);
-    logger.piData(`Add Page Interaction result: ${formattedResponse}`);
-
-    return Promise.resolve(resultsSvc.createPIAddResult(action, pageInteraction, resCode, formattedResponse));
-  }).catch(error => {
-    logger.error(chalk.red(error));
-
-    return Promise.reject(new Error(`Fail to make Insert Page Interaction call with error: ${error}`));
-  });
-}
-
-function updatePageInteraction(PI, action, pageInteraction) {
-  logger.debug(`Updating Page Interaction: #${pageInteraction.id}, name: ${pageInteraction.name}, pageInteraction: ${JSON.stringify(pageInteraction)}`);
-  let resCode;
-
-  return apiClient.updateEntity('PageInteraction', pageInteraction.id, PI).then(response => {
-    resCode = response.status;
-
-    return response.json()
-  }).then(result => {
-    const formattedResponse = JSON.stringify(result);
-    logger.piData(`Update Page Interaction url: entity/PageInteraction/${pageInteraction.id}`);
-    logger.piData(`Update Page Interaction payload: ${JSON.stringify(PI)}`);
-    logger.piData(`Update Page Interaction result: ${formattedResponse}`);
-
-    return Promise.resolve(resultsSvc.createPIUpdateResult(action, pageInteraction, resCode, formattedResponse));
-  }).catch(error => {
-    logger.error(chalk.red(error));
-
-    return Promise.reject(new Error(`Fail to make Update Page Interaction call with error: ${error}`));
-  });
-}
-
-function deletePageInteraction(id, action, interactionName) {
-  logger.debug(`Deleting Page Interaction #${id}, name: '${interactionName}'`);
-  let resCode;
-
-  return apiClient.deleteEntity('PageInteraction', id).then(response => {
-    resCode = response.status;
-
-    return response.json()
-  }).then(result => {
-    const formattedResponse = JSON.stringify(result);
-    logger.piData(`Delete Page Interaction url: entity/PageInteraction/${id}`);
-    logger.piData(`Delete Page Interaction  response: ${formattedResponse}`);
-    return Promise.resolve(resultsSvc.createPIDeleteResult(action, {name: interactionName, id: id}, resCode, formattedResponse));
-  }).catch(error => {
-    logger.error(chalk.red(error));
-
-    return Promise.reject(new Error(`Fail to make delete Page Interaction  call with error: ${error}`));
-  });
-}
-
-module.exports = {
-  getPageInteractions,
-  updatePageInteraction,
-  addPageInteraction,
-  getAllPageInteractions,
-  deletePageInteraction,
-  setUpService
-};
+module.exports = PageInteractionsCrudService;

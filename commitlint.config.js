@@ -16,7 +16,7 @@ module.exports = {
           return [true]
         }
         return [false, `Message must match this regex: ${headerRegex} .\n
-        The commit message must provide minimum one jira ticket id or a predefined type-enum (merge,build,fix,revert,refactor) followed by (:) symbol \n
+        The commit message must provide minimum one salesforce case number, jira ticket id or a predefined type-enum (merge,build,fix,revert,refactor) followed by (:) symbol \n
         e.g: PS-2121:My commit message body. OR merge: development branch into master`]
       }
     ]

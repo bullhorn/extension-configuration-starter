@@ -1,6 +1,7 @@
 # Extension Configuration Starter
 
 > Starter Kit used to generate a Bullhorn Extension configuration
+> Minimum node version required: 14.x
 
 ## Usage
 

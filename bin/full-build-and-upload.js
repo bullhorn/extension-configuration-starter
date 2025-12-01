@@ -1,202 +1,136 @@
 const chalk = require('chalk');
 const fs = require('fs');
 const logger = require('./lib/logger');
-const spawn = require('child_process').spawn;
-const extractExtension = require('./extract-extension');
+const extractExtension = require('./extract-extension-service');
 const injectionSvc = require('./injection-service');
 const intCleanSvc = require('./interaction-cleaning-service');
 const fieldIntDeploySvc = require('./field-interaction-deploy-service');
 const coIntDeploySvc = require('./custom-objects-interaction-deploy-service');
 const pageIntDeploySvc = require('./page-interaction-deploy-service');
 const resultsSvc = require('./results-service');
-const {createRestApiClient} = require('./lib/rest-api-client.js');
+const { validateConfiguration, normalizeUsers } = require('./lib/config-validator.js');
+const { clean, build } = require('./lib/deployment-utils.js');
+const { uploadForUsers } = require('./lib/upload-orchestrator.js');
 
-if (process.argv.length < 3) {
-  logger.error('Please pass an environment argument to build.');
+const MIN_ARGS_LENGTH = 3;
 
-  process.exit();
-}
-
-const environment = process.argv[2];
-const fileName = `./environments/environment.${environment}.json`;
-
-if (!fs.existsSync(fileName)) {
-  logger.error(`Environment file with name ${fileName} does not exist...`);
-
-  process.exit();
-}
-
-const configuration = JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
-const entityCustomObjectsMapFileName = `./customObjectEntityMap.json`;
-const entityNameMapFileName = `./entityNameMap.json`;
-
-const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMapFileName, 'UTF-8'));
-const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
-
-function hasClientIdAndClientSecret(configuration) {
-  return configuration.clientId && configuration.clientSecret;
-}
-
-function hasUsernameAndPassword(configuration) {
-  return configuration.username && configuration.password;
-}
-
-function hasUsers(configuration) {
-  if (Array.isArray(configuration.users) && configuration.users.length > 0) {
-    const invalidUsers = configuration.users.filter((user) => {
-      return !user.username || !user.password || !user.privateLabelId;
-    });
-
-    return invalidUsers.length === 0;
+class FullBuildAndUploadCommand {
+  constructor() {
+    this.logger = logger;
+    this.minArgsLength = MIN_ARGS_LENGTH;
+    this.extractExtension = extractExtension;
+    this.injectionSvc = injectionSvc;
+    this.intCleanSvc = intCleanSvc;
+    this.fieldIntDeploySvc = fieldIntDeploySvc;
+    this.coIntDeploySvc = coIntDeploySvc;
+    this.pageIntDeploySvc = pageIntDeploySvc;
+    this.resultsSvc = resultsSvc;
+    this.validateConfiguration = validateConfiguration;
+    this.normalizeUsers = normalizeUsers;
+    this.clean = clean;
+    this.build = build;
+    this.uploadForUsers = uploadForUsers;
   }
 
-  return false;
-}
-
-if (!configuration || (!hasClientIdAndClientSecret(configuration))) {
-  logger.error(`Configuration should have clientId and clientSecret for the authorization`, configuration);
-
-  process.exit();
-}
-
-if (!hasUsernameAndPassword(configuration) && !hasUsers(configuration)) {
-  logger.error(`Configuration should have either a username or password, or an array of users that each have a username, password, and privateLabelId`, configuration);
-
-  process.exit();
-}
-
-if (configuration.deployDebug) {
-  logger.multiLog(chalk.yellow('Deploying in debug mode'), logger.multiLogLevels.debugIntData);
-  logger.level = 'debug';
-}
-
-const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
-const lineBreaks = /(?:\r\n|\r|\n)/g;
-
-function print(command, arguments, callback) {
-  const process = spawn(command, arguments);
-
-  logger.debug(process.spawnargs.join(' '));
-
-  process.stdout.on('data', (data) => {
-    logger.debug(data.toString().replace(lineBreaks, ''));
-  });
-
-  process.stderr.on('data', (data) => {
-    logger.error(data.toString().replace(lineBreaks, ''));
-  });
-
-  process.on('exit', (code) => {
-    if (code !== 0) {
-      logger.error('Error performing process: exited with code ' + code);
-    } else {
-      callback();
+  validateArgs(args) {
+    if (args.length < this.minArgsLength) {
+      this.logger.error('Please pass an environment argument to build.');
+      return false;
     }
-  });
-
-  return process;
-}
-
-function clean(callback) {
-  print(`rimraf${cmdSuffix}`, ['output', 'dist'], callback);
-}
-
-function build(callback) {
-  print(`tsc${cmdSuffix}`, [], callback);
-}
-
-function auth(clientId, clientSecret, username, password) {
-  return createRestApiClient({
-    clientId: clientId,
-    clientSecret: clientSecret,
-    username: username,
-    password: password
-  }).then(client => {
-    return client;
-  });
-}
-
-function fullUpload(restApiClient, username, privateLabelId, extensions, deployFiOnly, callback) {
-  logger.multiLog(`Full uploading...`, logger.multiLogLevels.infoIntData);
-
-  intCleanSvc.setUpService(restApiClient);
-  fieldIntDeploySvc.setUpService(restApiClient);
-  coIntDeploySvc.setUpService(restApiClient);
-  pageIntDeploySvc.setUpService(restApiClient);
-
-  return intCleanSvc.runEnvCleanRoutine(username, deployFiOnly).then(delResults => {
-    return fieldIntDeploySvc.deployAllFieldInteractions(privateLabelId, extensions).then(fiResults => {
-      return coIntDeploySvc.deployAllCustomObjectFieldInteractions(extensions, deployFiOnly).then(coFIResults => {
-        return pageIntDeploySvc.deployAllPageInteractions(extensions, deployFiOnly).then(piResults => ({
-          deleted: delResults,
-          fieldInteractions: fiResults,
-          customObjectFIs: coFIResults,
-          pageInteractions: piResults
-        })).then(results => {
-          resultsSvc.printResults(results, privateLabelId);
-
-          return callback();
-        });
-      });
-    });
-  });
-}
-
-function authAndFullUpload(configuration, username, password, privateLabelId, extensions, deployFiOnly, callback) {
-  return auth(configuration.clientId, configuration.clientSecret, username, password).then(restApiClient => {
-    return fullUpload(restApiClient, username, privateLabelId, extensions, deployFiOnly, callback);
-  });
-}
-
-function uploadForUsers(users, callback, deployFiOnly = false) {
-  logger.multiLog(`Uploading for ${chalk.green(users[0].username)}`, logger.multiLogLevels.infoIntData);
-  logger.multiLog(`Private Label --> ${chalk.green(users[0].privateLabelId)}`, logger.multiLogLevels.infoIntData);
-  clean(() => {
-    build(() => {
-      extractExtension.extract((extensions) => {
-        injectionSvc.inject(configuration, extensions, (extensions) => {
-          logger.dev(`extensions --> ${JSON.stringify(extensions)}`);
-
-          if (entityCustomObjectsMap && entityNameMap) {
-            intCleanSvc.removeUnnecessaryFieldInteractions(extensions, users[0].privateLabelId, (extensions) => {
-              return authAndFullUpload(configuration, users[0].username, users[0].password, users[0].privateLabelId, extensions, deployFiOnly, () => {
-                const nextUsers = users.slice(1);
-
-                if (nextUsers.length) {
-                  uploadForUsers(users.slice(1), callback, true);
-                } else {
-                  return callback();
-                }
-              });
-            });
-          } else {
-            logger.error(chalk.red('No "entityNameMap.json" and/or "customObjectEntityMap.json" file. Aborting deployment...'));
-            process.exit(1);
-          }
-        });
-      })
-    });
-  });
-}
-
-try {
-  let users = [];
-
-  if (configuration.username && configuration.password && !Array.isArray(configuration.users)) {
-    logger.debug('Only one user found');
-    users.push({username: configuration.username, password: configuration.password});
-  } else if (configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
-    users = configuration.users
-  } else {
-    logger.error('No users found, aborting upload. Please check your environment file and add at least one user');
-    process.exit(1);
+    return true;
   }
 
-  uploadForUsers(users, () => {
-    logger.info('Deployment complete please view the results for each user above');
-    logger.printSeparator();
-  });
-} catch (error) {
-  logger.error(chalk.red('Error occurred during full-build-and-upload', error));
-  process.exit(1);
+  loadConfiguration(environment) {
+    const fileName = `./environments/environment.${environment}.json`;
+
+    if (!fs.existsSync(fileName)) {
+      this.logger.error(`Environment file with name ${fileName} does not exist...`);
+      return null;
+    }
+
+    return JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
+  }
+
+  loadEntityMaps() {
+    const entityCustomObjectsMapFileName = './customObjectEntityMap.json';
+    const entityNameMapFileName = './entityNameMap.json';
+
+    const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMapFileName, 'UTF-8'));
+    const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
+
+    return { entityCustomObjectsMap: entityCustomObjectsMap, entityNameMap: entityNameMap };
+  }
+
+  setupDebugMode(configuration) {
+    if (configuration.deployDebug) {
+      this.logger.multiLog(chalk.yellow('Deploying in debug mode'), this.logger.multiLogLevels.debugIntData);
+      this.logger.level = 'debug';
+    }
+  }
+
+  async execute(args) {
+    if (!this.validateArgs(args)) {
+      process.exit();
+    }
+
+    const environment = args[2];
+    const configuration = this.loadConfiguration(environment);
+
+    if (!configuration) {
+      process.exit();
+    }
+
+    const { entityCustomObjectsMap, entityNameMap } = this.loadEntityMaps();
+
+    if (!this.validateConfiguration(configuration)) {
+      process.exit();
+    }
+
+    this.setupDebugMode(configuration);
+
+    try {
+      const users = this.normalizeUsers(configuration);
+
+      if (!users) {
+        process.exit(0);
+      }
+
+      await this.uploadForUsers({
+        users: users,
+        configuration: configuration,
+        clean: this.clean,
+        build: this.build,
+        extractExtension: this.extractExtension,
+        injectionSvc: this.injectionSvc,
+        uploadType: 'full',
+        services: {
+          intCleanSvc: this.intCleanSvc,
+          fieldIntDeploySvc: this.fieldIntDeploySvc,
+          coIntDeploySvc: this.coIntDeploySvc,
+          pageIntDeploySvc: this.pageIntDeploySvc,
+        },
+        resultsSvc: this.resultsSvc,
+        validatePrerequisites: () => entityCustomObjectsMap && entityNameMap,
+        preprocessExtensions: async (extensions, privateLabelId) => {
+          return this.intCleanSvc.removeUnnecessaryFieldInteractions(extensions, privateLabelId);
+        },
+      });
+
+      this.logger.info('Deployment complete please view the results for each user above');
+      this.logger.printSeparator();
+    } catch (error) {
+      this.logger.error(chalk.red('Error occurred during full-build-and-upload', error));
+      process.exit(0);
+    }
+  }
 }
+
+// Execute if run directly
+if (require.main === module) {
+  const command = new FullBuildAndUploadCommand();
+  command.execute(process.argv);
+}
+
+module.exports = {
+  FullBuildAndUploadCommand,
+};
