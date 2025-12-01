@@ -7,9 +7,9 @@ const fieldIntDeploySvc = require('./field-interaction-deploy-service');
 const coIntDeploySvc = require('./custom-objects-interaction-deploy-service');
 const pageIntDeploySvc = require('./page-interaction-deploy-service');
 const resultsSvc = require('./results-service');
-const { validateConfiguration, normalizeUsers } = require('./lib/config-validator.js');
-const { clean, build } = require('./lib/deployment-utils.js');
-const { uploadForUsers } = require('./lib/upload-orchestrator.js');
+const { validateConfiguration, normalizeUsers } = require('./lib/config-validator');
+const { clean, build } = require('./lib/deployment-utils');
+const { uploadForUsers } = require('./lib/upload-orchestrator');
 
 const MIN_ARGS_LENGTH = 3;
 
@@ -49,8 +49,13 @@ class SelectiveBuildAndUploadCommand {
     return JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
   }
 
-  loadSelectiveExtensions(args, environment) {
-    let selectiveFileName = 'selective-extension.json';
+  loadSelectiveExtensions() {
+    const selectiveFileName = 'selective-extension.json';
+
+    if (!fs.existsSync(selectiveFileName)) {
+      this.logger.error(`Selective extension file with name ${selectiveFileName} does not exist...`);
+      return null;
+    }
 
     return JSON.parse(fs.readFileSync(`./${selectiveFileName}`, 'UTF-8'));
   }
@@ -74,7 +79,7 @@ class SelectiveBuildAndUploadCommand {
       process.exit();
     }
 
-    const selectiveExtensions = this.loadSelectiveExtensions(args, environment);
+    const selectiveExtensions = this.loadSelectiveExtensions();
 
     if (!selectiveExtensions) {
       process.exit();
@@ -90,7 +95,7 @@ class SelectiveBuildAndUploadCommand {
       const users = this.normalizeUsers(configuration);
 
       if (!users) {
-        process.exit(0);
+        process.exit();
       }
 
       await this.uploadForUsers({
@@ -108,14 +113,16 @@ class SelectiveBuildAndUploadCommand {
         },
         selectiveExtensions: selectiveExtensions,
         resultsSvc: this.resultsSvc,
-        validatePrerequisites: () => selectiveExtensions,
+        validatePrerequisites: () => {
+          return selectiveExtensions;
+        },
       });
 
       this.logger.info('Deployment complete please view the results for each user above');
       this.logger.printSeparator();
     } catch (error) {
       this.logger.error(chalk.red('Error occurred during selective-build-and-upload', error));
-      process.exit(0);
+      process.exit();
     }
   }
 }

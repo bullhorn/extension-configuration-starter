@@ -5,10 +5,10 @@ const resultsSvc = require('./results-service');
 const utils = require('./utils');
 
 class PageInteractionDeployService {
-  constructor(crudService, resultsSvc, utils) {
-    this.crudService = crudService;
-    this.resultsSvc = resultsSvc;
-    this.utils = utils;
+  constructor(_crudService, _resultsSvc, _utils) {
+    this.crudService = _crudService;
+    this.resultsSvc = _resultsSvc;
+    this.utils = _utils;
     this.logger = logger;
   }
 
@@ -20,10 +20,16 @@ class PageInteractionDeployService {
     const fullConfig = {};
 
     if (extensions.pageInteractions && extensions.pageInteractions.length > 0) {
-      const actions = extensions.pageInteractions.map(piAction => piAction.action).filter(this.utils.onlyUnique);
+      const actions = extensions.pageInteractions.map((piAction) => {
+        return piAction.action;
+      }).filter(this.utils.onlyUnique);
 
       actions.forEach((action) => {
-        fullConfig[action] = extensions.pageInteractions.filter(piAction => piAction.action === action).map(piName => piName.name);
+        fullConfig[action] = extensions.pageInteractions.filter((piAction) => {
+          return piAction.action === action;
+        }).map((piName) => {
+          return piName.name;
+        });
       });
     }
 
@@ -40,7 +46,9 @@ class PageInteractionDeployService {
 
         uploadConfig[action].toUpdate.forEach((pageInteraction) => {
           this.logger.multiLog(`Updating Page Interaction: '${pageInteraction.name}'`, this.logger.multiLogLevels.debugPiData);
-          const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction.name === pi.name && action === pi.action);
+          const extensionsPI = extensions.pageInteractions.find((pi) => {
+            return pageInteraction.name === pi.name && action === pi.action;
+          });
 
           if (extensionsPI) {
             const wrappedPromise = this.crudService.updatePageInteraction(extensionsPI, action, pageInteraction)
@@ -60,7 +68,9 @@ class PageInteractionDeployService {
 
         uploadConfig[action].toAdd.forEach((pageInteraction) => {
           this.logger.multiLog(`Adding Page Interaction: ${pageInteraction}`, this.logger.multiLogLevels.debugPiData);
-          const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction === pi.name && action === pi.action);
+          const extensionsPI = extensions.pageInteractions.find((pi) => {
+            return pageInteraction === pi.name && action === pi.action;
+          });
 
           if (extensionsPI) {
             const wrappedPromise = this.crudService.addPageInteraction(extensionsPI, action, pageInteraction)
@@ -96,7 +106,9 @@ class PageInteractionDeployService {
     const { promiseList, results } = this.processUploadConfig(uploadConfig, extensions);
 
     const responses = await Promise.allSettled(promiseList);
-    const responseValues = responses.map(response => response.value);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
 
     return results.concat(responseValues).flat();
   }
@@ -143,8 +155,12 @@ class PageInteractionDeployService {
       const toAddNames = [];
 
       for (const selectivePI of pageInteractions[action]) {
-        if (piData.find(pi => pi.action === action && pi.name === selectivePI)) {
-          const id = piData.find(pi => pi.action === action && pi.name === selectivePI).id;
+        if (piData.find((pi) => {
+          return pi.action === action && pi.name === selectivePI;
+        })) {
+          const id = piData.find((pi) => {
+            return pi.action === action && pi.name === selectivePI;
+          }).id;
           toUpdateNameID.push({ name: selectivePI, id: id });
         } else {
           toAddNames.push(selectivePI);

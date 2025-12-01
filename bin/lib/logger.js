@@ -14,7 +14,11 @@ const loggingLevels = {
   },
 };
 
-const filterOnly = level => winston.format(info => (level.includes(info.level) ? info : false))();
+const filterOnly = (level) => {
+  return winston.format((info) => {
+    return (level.includes(info.level) ? info : false);
+  })();
+};
 
 const logger = winston.createLogger({
   levels: loggingLevels.levels,

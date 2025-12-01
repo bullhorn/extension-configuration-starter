@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 const spawn = require('child_process').spawn;
 const logger = require('./logger');
-const { createRestApiClient } = require('./rest-api-client.js');
+const { createRestApiClient } = require('./rest-api-client');
 
 const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
 const lineBreaks = /(?:\r\n|\r|\n)/g;
@@ -62,7 +62,7 @@ class DeploymentUtils {
 
     if (!restApiClient) {
       this.logger.error(chalk.red('Authentication failed. Aborting deployment...'));
-      process.exit(0);
+      process.exit();
     }
 
     return restApiClient;

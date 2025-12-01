@@ -8,9 +8,9 @@ const fieldIntDeploySvc = require('./field-interaction-deploy-service');
 const coIntDeploySvc = require('./custom-objects-interaction-deploy-service');
 const pageIntDeploySvc = require('./page-interaction-deploy-service');
 const resultsSvc = require('./results-service');
-const { validateConfiguration, normalizeUsers } = require('./lib/config-validator.js');
-const { clean, build } = require('./lib/deployment-utils.js');
-const { uploadForUsers } = require('./lib/upload-orchestrator.js');
+const { validateConfiguration, normalizeUsers } = require('./lib/config-validator');
+const { clean, build } = require('./lib/deployment-utils');
+const { uploadForUsers } = require('./lib/upload-orchestrator');
 
 const MIN_ARGS_LENGTH = 3;
 
@@ -92,7 +92,7 @@ class FullBuildAndUploadCommand {
       const users = this.normalizeUsers(configuration);
 
       if (!users) {
-        process.exit(0);
+        process.exit();
       }
 
       await this.uploadForUsers({
@@ -110,7 +110,9 @@ class FullBuildAndUploadCommand {
           pageIntDeploySvc: this.pageIntDeploySvc,
         },
         resultsSvc: this.resultsSvc,
-        validatePrerequisites: () => entityCustomObjectsMap && entityNameMap,
+        validatePrerequisites: () => {
+          return entityCustomObjectsMap && entityNameMap;
+        },
         preprocessExtensions: async (extensions, privateLabelId) => {
           return this.intCleanSvc.removeUnnecessaryFieldInteractions(extensions, privateLabelId);
         },
@@ -120,7 +122,7 @@ class FullBuildAndUploadCommand {
       this.logger.printSeparator();
     } catch (error) {
       this.logger.error(chalk.red('Error occurred during full-build-and-upload', error));
-      process.exit(0);
+      process.exit();
     }
   }
 }

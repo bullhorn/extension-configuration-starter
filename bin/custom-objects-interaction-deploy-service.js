@@ -11,12 +11,12 @@ const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMap
 const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
 
 class CustomObjectInteractionDeployService {
-  constructor(crudService, entityCustomObjectsMap, entityNameMap, resultsSvc, utils) {
-    this.crudService = crudService;
-    this.entityCustomObjectsMap = entityCustomObjectsMap;
-    this.entityNameMap = entityNameMap;
-    this.resultsSvc = resultsSvc;
-    this.utils = utils;
+  constructor(_crudService, _entityCustomObjectsMap, _entityNameMap, _resultsSvc, _utils) {
+    this.crudService = _crudService;
+    this.entityCustomObjectsMap = _entityCustomObjectsMap;
+    this.entityNameMap = _entityNameMap;
+    this.resultsSvc = _resultsSvc;
+    this.utils = _utils;
     this.logger = logger;
   }
 
@@ -24,8 +24,10 @@ class CustomObjectInteractionDeployService {
     const selectedCOInteraction = selectiveExtensions.customObjectFieldInteractions;
 
     Object.entries(selectedCOInteraction).forEach(([ selCoKey, selCoVal ]) => {
-      Object.entries(this.entityCustomObjectsMap).forEach(([ key, val ] = entry) => {
-        const coConfig = val.find(co => co.extensionName === selCoKey);
+      Object.entries(this.entityCustomObjectsMap).forEach(([ key, val ]) => {
+        const coConfig = val.find((co) => {
+          return co.extensionName === selCoKey;
+        });
 
         if (coConfig) {
           selCoVal.entityName = key;
@@ -55,7 +57,7 @@ class CustomObjectInteractionDeployService {
     return selectedCOInteraction;
   }
 
-  buildFullConfig(extensions) {
+  buildFullConfig() {
     const fullCOConfig = {};
 
     Object.keys(this.entityCustomObjectsMap).forEach((key) => {
@@ -97,9 +99,9 @@ class CustomObjectInteractionDeployService {
           this.logger.multiLog(`Updating Custom Object Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugCoFiData);
 
           uploadConfig[extensionCO].toUpdate[fieldKey].interactionNameID.forEach((interaction) => {
-            const extensionFI = extensions.customObjectFieldInteractions[extensionCO].find(fi =>
-              interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase()
-            );
+            const extensionFI = extensions.customObjectFieldInteractions[extensionCO].find((fi) => {
+              return interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
 
             if (extensionFI) {
               const wrappedPromise = this.crudService.updateCustomObjectAttributeInteraction(extensionFI, entity, extensionCO, fieldKey, interaction, objectUrl)
@@ -122,9 +124,9 @@ class CustomObjectInteractionDeployService {
           this.logger.multiLog(`Adding Custom Object Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugCoFiData);
 
           uploadConfig[extensionCO].toAdd[fieldKey].interactionNames.forEach((interactionName) => {
-            const extensionFI = extensions.customObjectFieldInteractions[extensionCO].find(fi =>
-              interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase()
-            );
+            const extensionFI = extensions.customObjectFieldInteractions[extensionCO].find((fi) => {
+              return interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
 
             if (extensionFI) {
               const wrappedPromise = this.crudService.addCustomObjectAttributeInteraction(extensionFI, entity, extensionCO, fieldKey, uploadConfig[extensionCO].toAdd[fieldKey].fieldMapId, interactionName, objectUrl)
@@ -163,13 +165,22 @@ class CustomObjectInteractionDeployService {
     if (isFullDeploy) {
       Object.keys(coConfig).forEach((configCo) => {
         if (extensions.customObjectFieldInteractions[configCo]) {
-          const coExtFields = extensions.customObjectFieldInteractions[configCo].map(fi => fi.fieldName.toLowerCase()).filter(this.utils.onlyUnique);
+          const coExtFields = extensions.customObjectFieldInteractions[configCo].map((fi) => {
+            return fi.fieldName.toLowerCase();
+          }).filter(this.utils.onlyUnique);
           const configFields = [];
 
           coExtFields.forEach((extField) => {
-            const fieldFIs = extensions.customObjectFieldInteractions[configCo].filter(extFI => extFI.fieldName.toLowerCase() === extField.toLowerCase());
+            const fieldFIs = extensions.customObjectFieldInteractions[configCo].filter((extFI) => {
+              return extFI.fieldName.toLowerCase() === extField.toLowerCase();
+            });
             if (fieldFIs && fieldFIs.length) {
-              configFields.push({ fieldName: extField, fieldInteractionNames: fieldFIs.map(fi => fi.name) });
+              configFields.push({
+                fieldName: extField,
+                fieldInteractionNames: fieldFIs.map((fi) => {
+                  return fi.name;
+                }),
+              });
             }
           });
 
@@ -177,8 +188,12 @@ class CustomObjectInteractionDeployService {
             coConfig[configCo].fields = configFields;
           }
 
-          if (customObjects.find(resultCO => resultCO.type === coConfig[configCo].entityName && resultCO.objectNumber === coConfig[configCo].objectInstance)) {
-            coConfig[configCo].objectId = customObjects.find(resultCO => resultCO.type === coConfig[configCo].entityName && resultCO.objectNumber === coConfig[configCo].objectInstance).id;
+          if (customObjects.find((resultCO) => {
+            return resultCO.type === coConfig[configCo].entityName && resultCO.objectNumber === coConfig[configCo].objectInstance;
+          })) {
+            coConfig[configCo].objectId = customObjects.find((resultCO) => {
+              return resultCO.type === coConfig[configCo].entityName && resultCO.objectNumber === coConfig[configCo].objectInstance;
+            }).id;
             coConfig[configCo].customObjctName = configCo;
 
             if (coConfig[configCo].fields && coConfig[configCo].fields.length) {
@@ -194,7 +209,9 @@ class CustomObjectInteractionDeployService {
     } else {
       Object.keys(coConfig).forEach((extensionCO) => {
         const selectiveCustomObject = coConfig[extensionCO];
-        selectiveCustomObject.objectId = customObjects.find(customObject => customObject.type === coConfig[extensionCO].entityName && customObject.objectNumber === coConfig[extensionCO].objectInstance).id;
+        selectiveCustomObject.objectId = customObjects.find((customObject) => {
+          return customObject.type === coConfig[extensionCO].entityName && customObject.objectNumber === coConfig[extensionCO].objectInstance;
+        }).id;
         allObjectsWithId.push(selectiveCustomObject);
       });
     }
@@ -210,13 +227,17 @@ class CustomObjectInteractionDeployService {
 
     allObjectsWithId.forEach((selectiveCO) => {
       selectiveCO.fields.forEach((selCOField) => {
-        const resultCOField = customObjectFields.find(resField => resField.customObject.id === selectiveCO.objectId && resField.columnName.toLowerCase() === selCOField.fieldName.toLowerCase());
+        const resultCOField = customObjectFields.find((resField) => {
+          return resField.customObject.id === selectiveCO.objectId && resField.columnName.toLowerCase() === selCOField.fieldName.toLowerCase();
+        });
 
         if (resultCOField) {
           selCOField.fieldMapId = resultCOField.id;
         } else {
           this.logger.multiLog(chalk.yellow(`Could not find Custom Objects Attribute for ${selectiveCO.customObjctName} for ${selCOField.fieldName}`));
-          selectiveCO.fields = selectiveCO.fields.filter(field => field.fieldName !== selCOField.fieldName);
+          selectiveCO.fields = selectiveCO.fields.filter((field) => {
+            return field.fieldName !== selCOField.fieldName;
+          });
         }
       });
     });
@@ -233,7 +254,9 @@ class CustomObjectInteractionDeployService {
     const { promiseList, results } = this.processUploadConfig(uploadConfig, extensions);
 
     const responses = await Promise.allSettled(promiseList);
-    const responseValues = responses.map(response => response.value);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
 
     return results.concat(responseValues).flat();
   }
@@ -272,7 +295,7 @@ class CustomObjectInteractionDeployService {
     }
 
     this.logger.multiLog('Full Custom Objects Field Interactions deploy', this.logger.multiLogLevels.debugCoFiData);
-    const config = this.buildFullConfig(extensions);
+    const config = this.buildFullConfig();
 
     return this.deployCustomObjectFieldInteractions(config, extensions, true);
   }
@@ -288,8 +311,12 @@ class CustomObjectInteractionDeployService {
         const toAddNames = [];
 
         for (const fiName of customObjectField.fieldInteractionNames) {
-          if (fiData.find(fi => fi.attribute.id === customObjectField.fieldMapId && fi.name === fiName)) {
-            const id = fiData.find(fi => fi.attribute.id === customObjectField.fieldMapId && fi.name === fiName).id;
+          if (fiData.find((fi) => {
+            return fi.attribute.id === customObjectField.fieldMapId && fi.name === fiName;
+          })) {
+            const id = fiData.find((fi) => {
+              return fi.attribute.id === customObjectField.fieldMapId && fi.name === fiName;
+            }).id;
             toUpdateNameID.push({ name: fiName, id: id });
           } else {
             toAddNames.push(fiName);

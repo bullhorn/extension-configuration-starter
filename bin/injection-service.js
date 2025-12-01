@@ -9,7 +9,9 @@ class InjectionService {
     let modifiedScript = script;
     Object.keys(configuration).forEach((propertyName) => {
       if (Array.isArray(modifiedScript)) {
-        modifiedScript = modifiedScript.map(x => x.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]));
+        modifiedScript = modifiedScript.map((x) => {
+          return x.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
+        });
       } else {
         modifiedScript = modifiedScript.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
       }

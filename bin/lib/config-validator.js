@@ -1,5 +1,5 @@
+const chalk = require('chalk');
 const logger = require('./logger');
-const chalk = require("chalk");
 
 class ConfigValidator {
   constructor() {
@@ -16,7 +16,9 @@ class ConfigValidator {
 
   hasUsers(config) {
     if (Array.isArray(config.users) && config.users.length > 0) {
-      const invalidUsers = config.users.filter(user => !user.username || !user.password || !user.privateLabelId);
+      const invalidUsers = config.users.filter((user) => {
+        return !user.username || !user.password || !user.privateLabelId;
+      });
 
       return invalidUsers.length === 0;
     }

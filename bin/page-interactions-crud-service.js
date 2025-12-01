@@ -3,8 +3,8 @@ const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
 class PageInteractionsCrudService {
-  constructor(restApiClient) {
-    this.apiClient = restApiClient;
+  constructor(_restApiClient) {
+    this.apiClient = _restApiClient;
     this.logger = logger;
     this.resultsSvc = resultsSvc;
   }
@@ -31,7 +31,11 @@ class PageInteractionsCrudService {
       promiseList.push(this.fetchPageInteractionData('PageInteraction', where, fields));
     });
 
-    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
   }
 
   getAllPageInteractions(username) {

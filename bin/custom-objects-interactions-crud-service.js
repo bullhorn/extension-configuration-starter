@@ -4,8 +4,8 @@ const resultsSvc = require('./results-service');
 const utils = require('./utils');
 
 class CustomObjectInteractionsCrudService {
-  constructor(restApiClient) {
-    this.apiClient = restApiClient;
+  constructor(_restApiClient) {
+    this.apiClient = _restApiClient;
     this.logger = logger;
     this.resultsSvc = resultsSvc;
     this.utils = utils;
@@ -18,7 +18,11 @@ class CustomObjectInteractionsCrudService {
         this.logger.coFiData(`Query ${entityType} response: ${JSON.stringify(result)}`);
 
         if (result.data && result.data.length) {
-          result.data.forEach(data => data.type = entity);
+          result.data.forEach((data) => {
+            data.type = entity;
+
+            return data;
+          });
         }
 
         return Promise.resolve(result);
@@ -29,15 +33,23 @@ class CustomObjectInteractionsCrudService {
 
   getCustomObjects(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Objects');
-    const urls = Object.values(coQueryConfigs).map(conf => conf.objectUrl).filter(this.utils.onlyUnique);
-    const entities = Object.values(coQueryConfigs).map(conf => conf.entityName).filter(this.utils.onlyUnique);
+    const urls = Object.values(coQueryConfigs).map((conf) => {
+      return conf.objectUrl;
+    }).filter(this.utils.onlyUnique);
+    const entities = Object.values(coQueryConfigs).map((conf) => {
+      return conf.entityName;
+    }).filter(this.utils.onlyUnique);
     const promiseList = [];
 
     urls.forEach((objUrl) => {
-      const urlObjects = Object.values(coQueryConfigs).filter(coQueryConfig => coQueryConfig.objectUrl === objUrl);
+      const urlObjects = Object.values(coQueryConfigs).filter((coQueryConfig) => {
+        return coQueryConfig.objectUrl === objUrl;
+      });
 
       entities.forEach((entity) => {
-        const entityObjects = urlObjects.filter(entityObjConfig => entityObjConfig.entityName === entity);
+        const entityObjects = urlObjects.filter((entityObjConfig) => {
+          return entityObjConfig.entityName === entity;
+        });
 
         if (entityObjects.length) {
           const fields = [ 'id', 'objectNumber' ];
@@ -67,21 +79,33 @@ class CustomObjectInteractionsCrudService {
       });
     });
 
-    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
   }
 
   getCustomObjectAttributes(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Object Attributes');
-    const urls = Object.values(coQueryConfigs).map(conf => conf.objectUrl).filter(this.utils.onlyUnique);
-    const entities = Object.values(coQueryConfigs).map(conf => conf.entityName).filter(this.utils.onlyUnique);
+    const urls = Object.values(coQueryConfigs).map((conf) => {
+      return conf.objectUrl;
+    }).filter(this.utils.onlyUnique);
+    const entities = Object.values(coQueryConfigs).map((conf) => {
+      return conf.entityName;
+    }).filter(this.utils.onlyUnique);
     const promiseList = [];
 
     urls.forEach((objUrl) => {
       const whereQueries = [];
-      const objUrlConfigs = Object.values(coQueryConfigs).filter(coQueryConfig => coQueryConfig.objectUrl === objUrl);
+      const objUrlConfigs = Object.values(coQueryConfigs).filter((coQueryConfig) => {
+        return coQueryConfig.objectUrl === objUrl;
+      });
 
       entities.forEach((entity) => {
-        const entityObjects = objUrlConfigs.filter(entityObjConfig => entityObjConfig.entityName === entity);
+        const entityObjects = objUrlConfigs.filter((entityObjConfig) => {
+          return entityObjConfig.entityName === entity;
+        });
 
         if (entityObjects.length) {
           for (const object of entityObjects) {
@@ -105,26 +129,40 @@ class CustomObjectInteractionsCrudService {
       });
     });
 
-    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
   }
 
   getCustomObjectAttributeInteractions(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Object Attribute Interactions');
-    const urls = Object.values(coQueryConfigs).map(conf => conf.objectUrl).filter(this.utils.onlyUnique);
-    const entities = Object.values(coQueryConfigs).map(conf => conf.entityName).filter(this.utils.onlyUnique);
+    const urls = Object.values(coQueryConfigs).map((conf) => {
+      return conf.objectUrl;
+    }).filter(this.utils.onlyUnique);
+    const entities = Object.values(coQueryConfigs).map((conf) => {
+      return conf.entityName;
+    }).filter(this.utils.onlyUnique);
     const promiseList = [];
 
     urls.forEach((objUrl) => {
-      const objUrlConfigs = Object.values(coQueryConfigs).filter(coQueryConfig => coQueryConfig.objectUrl === objUrl);
+      const objUrlConfigs = Object.values(coQueryConfigs).filter((coQueryConfig) => {
+        return coQueryConfig.objectUrl === objUrl;
+      });
 
       entities.forEach((entity) => {
-        const entityObjects = objUrlConfigs.filter(entityObjConfig => entityObjConfig.entityName === entity);
+        const entityObjects = objUrlConfigs.filter((entityObjConfig) => {
+          return entityObjConfig.entityName === entity;
+        });
 
         if (entityObjects.length) {
           let whereQueries = [];
 
           entityObjects.forEach((object) => {
-            whereQueries = whereQueries.concat(object.fields.map(field => `(attribute.id = ${field.fieldMapId} AND name in ('${field.fieldInteractionNames.join('\',\'')}'))`));
+            whereQueries = whereQueries.concat(object.fields.map((field) => {
+              return `(attribute.id = ${field.fieldMapId} AND name in ('${field.fieldInteractionNames.join('\',\'')}'))`;
+            }));
           });
 
           const finalWhereQuery = `${whereQueries.join(' OR ')}`;
@@ -136,7 +174,11 @@ class CustomObjectInteractionsCrudService {
       });
     });
 
-    return Promise.allSettled(promiseList).then(results => Promise.resolve(results.map(result => result.value.data).flat()));
+    return Promise.allSettled(promiseList).then((results) => {
+      return Promise.resolve(results.map((result) => {
+        return result.value.data;
+      }).flat());
+    });
   }
 
   getAllCustomObjectAttributeInteractions(entity, objUrl, username) {
@@ -232,23 +274,23 @@ class CustomObjectInteractionsCrudService {
 
   getEntityType(objUrl, type = '') {
     switch (type) {
-      case 'A':
-        return `${objUrl}Attribute`;
-      case 'AI':
-        return `${objUrl}AttributeInteraction`;
-      case 'CO':
-        return `${objUrl}`;
-      default:
-        return `${objUrl}${type}`;
+    case 'A':
+      return `${objUrl}Attribute`;
+    case 'AI':
+      return `${objUrl}AttributeInteraction`;
+    case 'CO':
+      return `${objUrl}`;
+    default:
+      return `${objUrl}${type}`;
     }
   }
 
   getCoTypeFromEntityName(entityName) {
     switch (entityName) {
-      case ('Candidate/Client/Lead'):
-        return 'ALL';
-      default:
-        return `${entityName}`;
+    case ('Candidate/Client/Lead'):
+      return 'ALL';
+    default:
+      return `${entityName}`;
     }
   }
 }

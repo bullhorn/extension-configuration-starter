@@ -1,4 +1,4 @@
-const { BullhornAuth } = require('./auth.js');
+const { BullhornAuth } = require('./auth');
 
 const DEFAULT_PAGE_SIZE = 500;
 const MAX_RECORDS_TO_RETURN = 1000000;
@@ -9,9 +9,9 @@ const apiDefaults = {
 };
 
 class RestApiClient {
-  constructor(auth) {
-    this.auth = auth;
-    this.session = auth.getSession();
+  constructor(_auth) {
+    this.auth = _auth;
+    this.session = _auth.getSession();
     this.apiDefaults = apiDefaults;
   }
 
@@ -75,8 +75,10 @@ class RestApiClient {
     while (this.shouldPullMoreRecords(onePull, this.apiDefaults.maxRecordsToReturn)) {
       postData.start = onePull.data.length;
       const body = JSON.stringify(postData);
+      /* eslint-disable no-await-in-loop */
       const nextQueryResponse = await this.auth.makeRequest(`query/${entityType}`, { method: 'POST', body: body });
       const nextPull = typeof nextQueryResponse.json === 'function' ? await nextQueryResponse.json() : nextQueryResponse;
+      /* eslint-enable no-await-in-loop */
       nextPull.data.push(...onePull.data);
       Object.assign(onePull, nextPull);
     }

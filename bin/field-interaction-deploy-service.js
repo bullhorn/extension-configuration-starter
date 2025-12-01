@@ -14,16 +14,16 @@ const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8')
 class FieldInteractionDeployService {
   /**
    * Creates an instance of FieldInteractionDeployService
-   * @param {Object} crudService - CRUD service for field interactions
-   * @param {Object} entityNameMap - Mapping of entity names
-   * @param {Object} resultsSvc - Results service for handling deployment results
-   * @param {Object} utils - Utility functions
+   * @param {Object} _crudService - CRUD service for field interactions
+   * @param {Object} _entityNameMap - Mapping of entity names
+   * @param {Object} _resultsSvc - Results service for handling deployment results
+   * @param {Object} _utils - Utility functions
    */
-  constructor(crudService, entityNameMap, resultsSvc, utils) {
-    this.crudService = crudService;
-    this.entityNameMap = entityNameMap;
-    this.resultsSvc = resultsSvc;
-    this.utils = utils;
+  constructor(_crudService, _entityNameMap, _resultsSvc, _utils) {
+    this.crudService = _crudService;
+    this.entityNameMap = _entityNameMap;
+    this.resultsSvc = _resultsSvc;
+    this.utils = _utils;
     this.logger = logger;
   }
 
@@ -53,10 +53,16 @@ class FieldInteractionDeployService {
       Object.entries(extensions.fieldInteractions).forEach(([ extKey, extVal ]) => {
         if (this.entityNameMap[extKey]) {
           fullCOConfig[extKey] = { entityName: this.entityNameMap[extKey].entityName, fields: [] };
-          const fields = extVal.map(fi => fi.fieldName.toLowerCase()).filter(this.utils.onlyUnique);
+          const fields = extVal.map((fi) => {
+            return fi.fieldName.toLowerCase();
+          }).filter(this.utils.onlyUnique);
 
           fields.forEach((field) => {
-            const fieldFIs = extVal.filter(extFI => extFI.fieldName.toLowerCase() === field.toLowerCase()).map(extFI => extFI.name);
+            const fieldFIs = extVal.filter((extFI) => {
+              return extFI.fieldName.toLowerCase() === field.toLowerCase();
+            }).map((extFI) => {
+              return extFI.name;
+            });
             fullCOConfig[extKey].fields.push({ fieldName: field, fieldInteractionNames: fieldFIs });
           });
         } else {
@@ -113,9 +119,9 @@ class FieldInteractionDeployService {
           this.logger.multiLog(`Updating Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugFiData);
 
           uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach((interaction) => {
-            const extensionFI = extensions.fieldInteractions[entity].find(fi =>
-              interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase()
-            );
+            const extensionFI = extensions.fieldInteractions[entity].find((fi) => {
+              return interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
 
             if (extensionFI) {
               const { privateLabelIds } = extensionFI;
@@ -144,9 +150,9 @@ class FieldInteractionDeployService {
           this.logger.multiLog(`Adding Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugFiData);
 
           uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach((interactionName) => {
-            const extensionFI = extensions.fieldInteractions[entity].find(fi =>
-              interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase()
-            );
+            const extensionFI = extensions.fieldInteractions[entity].find((fi) => {
+              return interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
 
             if (extensionFI) {
               const { privateLabelIds } = extensionFI;
@@ -193,17 +199,23 @@ class FieldInteractionDeployService {
     }
 
     Object.values(fieldInteractionsConfig).forEach((configVal) => {
-      const entityFieldMaps = fieldMapInstances.filter(entityFieldMap => entityFieldMap.entity === configVal.entityName);
+      const entityFieldMaps = fieldMapInstances.filter((entityFieldMap) => {
+        return entityFieldMap.entity === configVal.entityName;
+      });
 
       for (const configField of configVal.fields) {
-        const fieldMapInstance = entityFieldMaps.find(fieldMap => fieldMap.columnName.toLowerCase() === configField.fieldName.toLowerCase());
+        const fieldMapInstance = entityFieldMaps.find((fieldMap) => {
+          return fieldMap.columnName.toLowerCase() === configField.fieldName.toLowerCase();
+        });
 
         if (fieldMapInstance) {
           configField.fieldMapId = fieldMapInstance.id;
         } else {
           this.logger.multiLog(chalk.yellow(`Could not find field map for: ${configField.fieldName}!`), this.logger.multiLogLevels.debugFiData);
           this.logger.multiLog(chalk.yellow(`Field Interactions for ${configField.fieldName} for ${configVal.entityName} will not be deployed!`), this.logger.multiLogLevels.debugFiData);
-          configVal.fields = configVal.fields.filter(filterField => filterField.fieldName.toLowerCase() !== configField.fieldName.toLowerCase());
+          configVal.fields = configVal.fields.filter((filterField) => {
+            return filterField.fieldName.toLowerCase() !== configField.fieldName.toLowerCase();
+          });
         }
       }
     });
@@ -220,7 +232,9 @@ class FieldInteractionDeployService {
     const { promiseList, results } = this.processUploadConfig(uploadConfig, extensions, privateLabelId);
 
     const responses = await Promise.allSettled(promiseList);
-    const responseValues = responses.map(response => response.value);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
 
     return results.concat(responseValues).flat();
   }
@@ -273,8 +287,12 @@ class FieldInteractionDeployService {
         const toAddNames = [];
 
         for (const fiName of selectiveFI.fieldInteractionNames) {
-          if (fiData.find(fi => fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName)) {
-            const id = fiData.find(fi => fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName).id;
+          if (fiData.find((fi) => {
+            return fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName;
+          })) {
+            const id = fiData.find((fi) => {
+              return fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName;
+            }).id;
             toUpdateNameID.push({ name: fiName, id: id });
           } else {
             toAddNames.push(fiName);

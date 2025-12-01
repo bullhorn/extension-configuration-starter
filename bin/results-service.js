@@ -283,14 +283,22 @@ class ResultsService {
     this.logger.info('Field Interactions');
 
     const failures = [];
-    const allEntities = results.map(result => result.entity).filter(this.utils.onlyUnique);
+    const allEntities = results.map((result) => {
+      return result.entity;
+    }).filter(this.utils.onlyUnique);
 
     allEntities.forEach((entity) => {
       this.fillToSeparate(` Entity: ${entity} `, '<<', '>>', 75);
-      const entityFields = results.filter(fiEntity => fiEntity.entity === entity).map(fiField => fiField.field).filter(this.utils.onlyUnique);
+      const entityFields = results.filter((fiEntity) => {
+        return fiEntity.entity === entity;
+      }).map((fiField) => {
+        return fiField.field;
+      }).filter(this.utils.onlyUnique);
       entityFields.forEach((field) => {
         this.fillToSeparate(` Field: ${field} `, '<', '>', 35);
-        results.filter(fi => fi.entity === entity && fi.field === field).forEach((result) => {
+        results.filter((fi) => {
+          return fi.entity === entity && fi.field === field;
+        }).forEach((result) => {
           if (!result.success) {
             failures.push(result);
           } else {
@@ -319,18 +327,30 @@ class ResultsService {
     this.logger.info('Custom Object Field Interactions');
 
     const failures = [];
-    const allCustomObjects = results.map(result => result.customObject).filter(this.utils.onlyUnique);
+    const allCustomObjects = results.map((result) => {
+      return result.customObject;
+    }).filter(this.utils.onlyUnique);
 
     allCustomObjects.forEach((customObject) => {
-      const allCOEntities = results.filter(coEntity => coEntity.entity && coEntity.customObject === customObject).map(entity => entity.entity).filter(this.utils.onlyUnique);
+      const allCOEntities = results.filter((coEntity) => {
+        return coEntity.entity && coEntity.customObject === customObject;
+      }).map((entity) => {
+        return entity.entity;
+      }).filter(this.utils.onlyUnique);
 
       allCOEntities.forEach((coEntity) => {
         this.fillToSeparate(` Custom Object: ${customObject} (${coEntity}) `, '<<', '>>', 75);
-        const coFields = results.filter(coField => coField.entity === coEntity && coField.customObject === customObject).map(fiField => fiField.field).filter(this.utils.onlyUnique);
+        const coFields = results.filter((coField) => {
+          return coField.entity === coEntity && coField.customObject === customObject;
+        }).map((fiField) => {
+          return fiField.field;
+        }).filter(this.utils.onlyUnique);
 
         coFields.forEach((field) => {
           this.fillToSeparate(` Field: ${field} `, '<', '>', 35);
-          results.filter(fi => fi.entity === coEntity && fi.field === field && fi.customObject === customObject).forEach((result) => {
+          results.filter((fi) => {
+            return fi.entity === coEntity && fi.field === field && fi.customObject === customObject;
+          }).forEach((result) => {
             if (!result.success) {
               failures.push(result);
             } else {
@@ -360,11 +380,15 @@ class ResultsService {
     this.logger.info('Page Interactions');
 
     const failures = [];
-    const allActions = results.map(result => result.action).filter(this.utils.onlyUnique);
+    const allActions = results.map((result) => {
+      return result.action;
+    }).filter(this.utils.onlyUnique);
 
     allActions.forEach((action) => {
       this.fillToSeparate(` Action: ${action}`, '<<', '>>', 75);
-      results.filter(pi => pi.action === action).forEach((result) => {
+      results.filter((pi) => {
+        return pi.action === action;
+      }).forEach((result) => {
         if (!result.success) {
           failures.push(result);
         } else {
@@ -437,15 +461,23 @@ class ResultsService {
   }
 
   printFieldInteractionFails(fails) {
-    const allEntities = fails.map(result => result.entity).filter(this.utils.onlyUnique);
+    const allEntities = fails.map((result) => {
+      return result.entity;
+    }).filter(this.utils.onlyUnique);
 
     allEntities.forEach((entity) => {
       this.fillToSeparate(` Entity: ${entity} `, '<<', '>>', 75);
-      const entityFields = fails.filter(fiEntity => fiEntity.entity === entity).map(fiField => fiField.field).filter(this.utils.onlyUnique);
+      const entityFields = fails.filter((fiEntity) => {
+        return fiEntity.entity === entity;
+      }).map((fiField) => {
+        return fiField.field;
+      }).filter(this.utils.onlyUnique);
 
       entityFields.forEach((field) => {
         this.fillToSeparate(` Field: ${field} `, '<', '>', 35);
-        fails.filter(fi => fi.entity === entity && fi.field === field).forEach((result) => {
+        fails.filter((fi) => {
+          return fi.entity === entity && fi.field === field;
+        }).forEach((result) => {
           this.logger.info(chalk.red(`--- ${result.name} - Reason: ${result.reason}`));
         });
       });
@@ -453,18 +485,30 @@ class ResultsService {
   }
 
   printCOInteractionFails(fails) {
-    const allCustomObjects = fails.map(result => result.customObject).filter(this.utils.onlyUnique);
+    const allCustomObjects = fails.map((result) => {
+      return result.customObject;
+    }).filter(this.utils.onlyUnique);
 
     allCustomObjects.forEach((customObject) => {
-      const allCOEntities = fails.filter(coEntity => coEntity.entity && coEntity.customObject === customObject).map(entity => entity.entity).filter(this.utils.onlyUnique);
+      const allCOEntities = fails.filter((coEntity) => {
+        return coEntity.entity && coEntity.customObject === customObject;
+      }).map((entity) => {
+        return entity.entity;
+      }).filter(this.utils.onlyUnique);
 
       allCOEntities.forEach((coEntity) => {
         this.fillToSeparate(` Custom Object: ${customObject} (${coEntity}) `, '<<', '>>', 75);
-        const coFields = fails.filter(coField => coField.entity === coEntity && coField.customObject === customObject).map(fiField => fiField.field).filter(this.utils.onlyUnique);
+        const coFields = fails.filter((coField) => {
+          return coField.entity === coEntity && coField.customObject === customObject;
+        }).map((fiField) => {
+          return fiField.field;
+        }).filter(this.utils.onlyUnique);
 
         coFields.forEach((field) => {
           this.fillToSeparate(` Field: ${field} `, '<', '>', 35);
-          fails.filter(fi => fi.entity === coEntity && fi.field === field && fi.customObject === customObject).forEach((result) => {
+          fails.filter((fi) => {
+            return fi.entity === coEntity && fi.field === field && fi.customObject === customObject;
+          }).forEach((result) => {
             this.logger.info(chalk.red(`- ${result.name} - Reason: ${result.reason}`));
           });
         });
@@ -473,11 +517,15 @@ class ResultsService {
   }
 
   printPageInteractionFails(fails) {
-    const allActions = fails.map(result => result.action).filter(this.utils.onlyUnique);
+    const allActions = fails.map((result) => {
+      return result.action;
+    }).filter(this.utils.onlyUnique);
 
     allActions.forEach((action) => {
       this.fillToSeparate(` Action: ${action}`, '<<', '>>', 75);
-      fails.filter(pi => pi.action === action).forEach((result) => {
+      fails.filter((pi) => {
+        return pi.action === action;
+      }).forEach((result) => {
         this.logger.info(chalk.red(`- ${result.name} - Reason: ${result.reason}`));
       });
     });
@@ -486,12 +534,20 @@ class ResultsService {
   printCounts(results) {
     this.logger.info('Deploy Summary \n');
     const deployedInteractions = results.fieldInteractions.concat(results.customObjectFIs, results.pageInteractions);
-    const totalDeployed = deployedInteractions.filter(result => result.success).length;
+    const totalDeployed = deployedInteractions.filter((result) => {
+      return result.success;
+    }).length;
     this.logger.info(chalk.blue(`Total interactions deployed: ${totalDeployed} \n`));
     const deletedInteractions = results.deleted ? results.deleted : [];
-    const totalDeleted = Object.values(deletedInteractions).flat().filter(result => result.success).length;
+    const totalDeleted = Object.values(deletedInteractions).flat().filter((result) => {
+      return result.success;
+    }).length;
     this.logger.info(chalk.magenta(`Total interactions deleted: ${totalDeleted} \n`));
-    const totalFails = deployedInteractions.filter(result => !result.success).length + Object.values(deletedInteractions).flat().filter(result => !result.success).length;
+    const totalFails = deployedInteractions.filter((result) => {
+      return !result.success;
+    }).length + Object.values(deletedInteractions).flat().filter((result) => {
+      return !result.success;
+    }).length;
 
     if (totalFails > 0) {
       this.logger.info(chalk.red(`Total Failures: ${totalFails} \n`));
@@ -514,11 +570,13 @@ class ResultsService {
       let sep = beginSym;
       const halfSize = Math.floor(totalSize / 2);
 
+      // eslint-disable-next-line no-plusplus
       for (let i = 0; i < halfSize; i++) {
         sep += '-';
       }
       sep += text;
 
+      // eslint-disable-next-line no-plusplus
       for (let i = 0; i < halfSize; i++) {
         sep += '-';
       }

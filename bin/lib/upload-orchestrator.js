@@ -8,7 +8,7 @@ class UploadOrchestrator {
   }
 
   async setupServices(restApiClient, services) {
-    services.forEach(service => {
+    services.forEach((service) => {
       if (service && service.setUpService) {
         service.setUpService(restApiClient);
       }
@@ -71,7 +71,9 @@ class UploadOrchestrator {
   }
 
   async authAndUpload(config) {
-    const { clientId, clientSecret, username, password } = config.authConfig;
+    const {
+      clientId, clientSecret, username, password,
+    } = config.authConfig;
     const restApiClient = await authenticate(clientId, clientSecret, username, password);
 
     return this.executeUpload({
@@ -94,6 +96,7 @@ class UploadOrchestrator {
       deployFiOnly = false,
     } = config;
 
+    // eslint-disable-next-line no-plusplus
     for (let i = 0; i < users.length; i++) {
       const user = users[i];
       const isFirstUser = i === 0;
@@ -102,6 +105,7 @@ class UploadOrchestrator {
       this.logger.multiLog(`Uploading for ${chalk.green(user.username)}`, this.logger.multiLogLevels.infoIntData);
       this.logger.multiLog(`Private Label --> ${chalk.green(user.privateLabelId)}`, this.logger.multiLogLevels.infoIntData);
 
+      /* eslint-disable no-await-in-loop */
       await clean();
       await build();
 
@@ -115,7 +119,7 @@ class UploadOrchestrator {
           ? 'No "entityNameMap.json" and/or "customObjectEntityMap.json" file. Aborting deployment...'
           : 'No "selective-extension.json" file. Aborting deployment...';
         this.logger.error(chalk.red(errorMsg));
-        process.exit(0);
+        process.exit();
       }
 
       const processedExtensions = preprocessExtensions
@@ -135,6 +139,7 @@ class UploadOrchestrator {
         extensions: processedExtensions,
         deployFiOnly: shouldDeployFiOnly,
       });
+      /* eslint-enable no-await-in-loop */
     }
   }
 }

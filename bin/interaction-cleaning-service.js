@@ -11,11 +11,11 @@ const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8')
 const extensionsFileName = './output/extension.json';
 
 class InteractionCleaningService {
-  constructor(fieldIntRestSvc, coFieldIntRestSvc, pageIntRestSvc, entityNameMap) {
-    this.fieldIntRestSvc = fieldIntRestSvc;
-    this.coFieldIntRestSvc = coFieldIntRestSvc;
-    this.pageIntRestSvc = pageIntRestSvc;
-    this.entityNameMap = entityNameMap;
+  constructor(_fieldIntRestSvc, _coFieldIntRestSvc, _pageIntRestSvc, _entityNameMap) {
+    this.fieldIntRestSvc = _fieldIntRestSvc;
+    this.coFieldIntRestSvc = _coFieldIntRestSvc;
+    this.pageIntRestSvc = _pageIntRestSvc;
+    this.entityNameMap = _entityNameMap;
     this.logger = logger;
   }
 
@@ -47,7 +47,9 @@ class InteractionCleaningService {
     });
 
     const responses = await Promise.allSettled(promiseList);
-    const responseValues = responses.map(response => response.value);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
 
     return responseValues.flat();
   }
@@ -93,7 +95,9 @@ class InteractionCleaningService {
     });
 
     const delResponses = await Promise.allSettled(delPromiseList);
-    const responseValues = delResponses.map(response => response.value);
+    const responseValues = delResponses.map((response) => {
+      return response.value;
+    });
 
     return responseValues.flat();
   }
@@ -116,7 +120,9 @@ class InteractionCleaningService {
     });
 
     const responses = await Promise.allSettled(promiseList);
-    const responseValues = responses.map(response => response.value);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
 
     return responseValues.flat();
   }
@@ -125,6 +131,7 @@ class InteractionCleaningService {
     if (extensions.fieldInteractions) {
       Object.keys(extensions.fieldInteractions).forEach((entity) => {
         if (extensions.fieldInteractions[entity]) {
+          // eslint-disable-next-line no-plusplus
           for (let index = extensions.fieldInteractions[entity].length - 1; index >= 0; index--) {
             if (extensions.fieldInteractions[entity][index].privateLabelIds && !extensions.fieldInteractions[entity][index].privateLabelIds.includes(privateLabelId)) {
               this.logger.multiLog(`Removed unnecessary field interactions for Private Label #${privateLabelId} at index ${index}`, this.logger.multiLogLevels.debugFiData);

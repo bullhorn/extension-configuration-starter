@@ -6,13 +6,13 @@ const DEFAULT_BASE_URL = 'https://rest.bullhornstaffing.com';
 const SESSION_EXPIRY_MS = 3600000;
 
 class BullhornAuth {
-  constructor(config) {
+  constructor(_config) {
     this.config = {
-      clientId: config.clientId,
-      clientSecret: config.clientSecret,
-      username: config.username,
-      password: config.password,
-      baseUrl: config.baseUrl || DEFAULT_BASE_URL,
+      clientId: _config.clientId,
+      clientSecret: _config.clientSecret,
+      username: _config.username,
+      password: _config.password,
+      baseUrl: _config.baseUrl || DEFAULT_BASE_URL,
     };
     this.session = null;
     this.logger = logger;

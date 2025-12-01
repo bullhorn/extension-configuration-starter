@@ -3,8 +3,8 @@ const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
 class FieldInteractionsCrudService {
-  constructor(restApiClient) {
-    this.apiClient = restApiClient;
+  constructor(_restApiClient) {
+    this.apiClient = _restApiClient;
     this.logger = logger;
     this.resultsSvc = resultsSvc;
   }
@@ -16,7 +16,11 @@ class FieldInteractionsCrudService {
         this.logger.fiData(`Query ${entityType} response: ${JSON.stringify(result)}`);
 
         if (result.data && result.data.length) {
-          result.data.forEach(data => data.type = entity);
+          result.data.forEach((data) => {
+            data.type = entity;
+
+            return data;
+          });
         }
 
         return Promise.resolve(result);
@@ -42,7 +46,11 @@ class FieldInteractionsCrudService {
       promiseList.push(this.fetchFieldInteractionData('FieldMapInstance', where, 'id,entity,columnName', entity.entityName));
     }
 
-    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
   }
 
   getFieldInteractions(fieldInteractions, privateLabelId) {
@@ -50,13 +58,19 @@ class FieldInteractionsCrudService {
 
     for (const entity of Object.values(fieldInteractions)) {
       let where = '(';
-      where += entity.fields.map(field => `(fieldMapID = ${field.fieldMapId} AND name in ('${field.fieldInteractionNames.join('\',\'')}')`).join(') OR ');
+      where += entity.fields.map((field) => {
+        return `(fieldMapID = ${field.fieldMapId} AND name in ('${field.fieldInteractionNames.join('\',\'')}')`;
+      }).join(') OR ');
       where += `)) AND privateLabelID = ${privateLabelId}`;
 
       promiseList.push(this.fetchFieldInteractionData('FieldMapInteraction', where, 'id,name,fieldMapID,fieldName,entity', entity.entityName));
     }
 
-    return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
   }
 
   getAllFieldInteractions(username) {
