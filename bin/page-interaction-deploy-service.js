@@ -4,7 +4,16 @@ const PageInteractionsCrudService = require('./page-interactions-crud-service');
 const resultsSvc = require('./results-service');
 const utils = require('./utils');
 
+/**
+ * Service for deploying page interactions to Bullhorn
+ */
 class PageInteractionDeployService {
+  /**
+   * Creates an instance of PageInteractionDeployService
+   * @param {Object} _crudService - CRUD service for page interactions
+   * @param {Object} _resultsSvc - Results service for handling deployment results
+   * @param {Object} _utils - Utility functions
+   */
   constructor(_crudService, _resultsSvc, _utils) {
     this.crudService = _crudService;
     this.resultsSvc = _resultsSvc;
@@ -12,10 +21,20 @@ class PageInteractionDeployService {
     this.logger = logger;
   }
 
+  /**
+   * Builds configuration for selective page interaction deployment
+   * @param {Object} selectiveExtensions - Selective extensions configuration
+   * @returns {Object} Page interactions configuration
+   */
   buildSelectedConfig(selectiveExtensions) {
     return selectiveExtensions.pageInteractions;
   }
 
+  /**
+   * Builds configuration for full page interaction deployment
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Object} Page interactions configuration organized by action
+   */
   buildFullConfig(extensions) {
     const fullConfig = {};
 
@@ -36,6 +55,12 @@ class PageInteractionDeployService {
     return fullConfig;
   }
 
+  /**
+   * Processes upload configuration and creates promises for add/update operations
+   * @param {Object} uploadConfig - Upload configuration with toAdd and toUpdate arrays
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Object} Object containing promiseList and results arrays
+   */
   processUploadConfig(uploadConfig, extensions) {
     const promiseList = [];
     const results = [];
@@ -89,6 +114,12 @@ class PageInteractionDeployService {
     return { promiseList, results };
   }
 
+  /**
+   * Deploys page interactions based on configuration
+   * @param {Object} pageInteractionsConfig - Page interactions configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Promise<Array>} Array of deployment results
+   */
   async deployPageInteractions(pageInteractionsConfig, extensions) {
     if (!pageInteractionsConfig || Object.keys(pageInteractionsConfig).length === 0) {
       return [];
@@ -113,6 +144,13 @@ class PageInteractionDeployService {
     return results.concat(responseValues).flat();
   }
 
+  /**
+   * Deploys selected page interactions from selective configuration
+   * @param {Object} selectiveExtensions - Selective extensions configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be deployed
+   * @returns {Promise<Array>} Array of deployment results
+   */
   deploySelectedPageInteractions(selectiveExtensions, extensions, deployFiOnly) {
     if (deployFiOnly) {
       this.logger.multiLog(chalk.yellow('Skipping deploy Page Interactions because they were already deployed within first user'), this.logger.multiLogLevels.warnPiData);
@@ -129,6 +167,12 @@ class PageInteractionDeployService {
     return this.deployPageInteractions(config, extensions);
   }
 
+  /**
+   * Deploys all page interactions from extension configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be deployed
+   * @returns {Promise<Array>} Array of deployment results
+   */
   deployAllPageInteractions(extensions, deployFiOnly) {
     if (deployFiOnly) {
       this.logger.multiLog(chalk.yellow('Skipping deploy Page Interactions because they were already deployed within first user'), this.logger.multiLogLevels.warnPiData);
@@ -146,6 +190,12 @@ class PageInteractionDeployService {
     return this.deployPageInteractions(config, extensions);
   }
 
+  /**
+   * Creates upload configuration from page interaction data
+   * @param {Array} piData - Page interaction data from Bullhorn
+   * @param {Object} pageInteractions - Page interactions configuration
+   * @returns {Object} Upload configuration with toAdd and toUpdate arrays
+   */
   createPageInteractionsUploadConfig(piData, pageInteractions) {
     const uploadConfig = {};
 

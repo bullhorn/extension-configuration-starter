@@ -10,7 +10,17 @@ const entityNameMapFileName = './entityNameMap.json';
 const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
 const extensionsFileName = './output/extension.json';
 
+/**
+ * Service for cleaning and managing interactions before deployment
+ */
 class InteractionCleaningService {
+  /**
+   * Creates an instance of InteractionCleaningService
+   * @param {Object} _fieldIntRestSvc - Field interactions CRUD service
+   * @param {Object} _coFieldIntRestSvc - Custom object interactions CRUD service
+   * @param {Object} _pageIntRestSvc - Page interactions CRUD service
+   * @param {Object} _entityNameMap - Entity name mapping configuration
+   */
   constructor(_fieldIntRestSvc, _coFieldIntRestSvc, _pageIntRestSvc, _entityNameMap) {
     this.fieldIntRestSvc = _fieldIntRestSvc;
     this.coFieldIntRestSvc = _coFieldIntRestSvc;
@@ -19,6 +29,12 @@ class InteractionCleaningService {
     this.logger = logger;
   }
 
+  /**
+   * Runs complete environment cleaning routine before deployment
+   * @param {string} username - Username to clean interactions for
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be cleaned
+   * @returns {Promise<Object>} Object containing results for all interaction types
+   */
   async runEnvCleanRoutine(username, deployFiOnly) {
     this.logger.multiLog('Cleaning env before full deploy...', this.logger.multiLogLevels.infoIntData);
     const results = {};
@@ -35,6 +51,11 @@ class InteractionCleaningService {
     return results;
   }
 
+  /**
+   * Cleans (deletes) all field interactions for a specific user
+   * @param {string} username - Username to clean interactions for
+   * @returns {Promise<Array>} Array of deletion results
+   */
   async cleanFieldInteractions(username) {
     this.logger.multiLog(`Deleting Field Interactions for ${chalk.green(username)} ...`, this.logger.multiLogLevels.debugFiData);
 
@@ -54,6 +75,12 @@ class InteractionCleaningService {
     return responseValues.flat();
   }
 
+  /**
+   * Cleans (deletes) all custom object field interactions for a specific user
+   * @param {string} username - Username to clean interactions for
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be cleaned
+   * @returns {Promise<Array>} Array of deletion results
+   */
   async cleanCustomObjectFieldInteractions(username, deployFiOnly) {
     if (deployFiOnly) {
       this.logger.multiLog(chalk.yellow('Skipping delete Custom Object Field Interactions because they were already deployed within first user and do not need clean up'), this.logger.multiLogLevels.warnCoFiData);
@@ -102,6 +129,12 @@ class InteractionCleaningService {
     return responseValues.flat();
   }
 
+  /**
+   * Cleans (deletes) all page interactions for a specific user
+   * @param {string} username - Username to clean interactions for
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be cleaned
+   * @returns {Promise<Array>} Array of deletion results
+   */
   async cleanPageInteractionResults(username, deployFiOnly) {
     if (deployFiOnly) {
       this.logger.multiLog(chalk.yellow('Skipping delete Page Interactions because they were already deployed within first user and do not need clean up'), this.logger.multiLogLevels.warnPiData);
@@ -127,6 +160,12 @@ class InteractionCleaningService {
     return responseValues.flat();
   }
 
+  /**
+   * Removes field interactions that don't match the specified private label ID
+   * @param {Object} extensions - Extensions configuration object
+   * @param {number} privateLabelId - Private label ID to filter by
+   * @returns {Promise<Object>} Updated extensions object
+   */
   async removeUnnecessaryFieldInteractions(extensions, privateLabelId) {
     if (extensions.fieldInteractions) {
       Object.keys(extensions.fieldInteractions).forEach((entity) => {

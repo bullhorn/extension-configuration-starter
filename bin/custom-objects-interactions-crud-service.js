@@ -3,7 +3,14 @@ const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 const utils = require('./utils');
 
+/**
+ * CRUD service for managing custom object field interactions in Bullhorn
+ */
 class CustomObjectInteractionsCrudService {
+  /**
+   * Creates an instance of CustomObjectInteractionsCrudService
+   * @param {Object} _restApiClient - REST API client for Bullhorn
+   */
   constructor(_restApiClient) {
     this.apiClient = _restApiClient;
     this.logger = logger;
@@ -11,6 +18,14 @@ class CustomObjectInteractionsCrudService {
     this.utils = utils;
   }
 
+  /**
+   * Fetches custom object field interaction data from Bullhorn API
+   * @param {string} entityType - Type of entity to query
+   * @param {string} where - WHERE clause for the query
+   * @param {string} fields - Comma-separated list of fields to retrieve
+   * @param {string} entity - Entity name for tagging results
+   * @returns {Promise<Object>} Query result with data array
+   */
   fetchCustomObjectFieldInteractionData(entityType, where, fields, entity) {
     return this.apiClient.queryAll(entityType, where, fields)
       .then((result) => {
@@ -31,6 +46,11 @@ class CustomObjectInteractionsCrudService {
       });
   }
 
+  /**
+   * Retrieves custom objects based on configuration
+   * @param {Object} coQueryConfigs - Configuration object mapping custom objects
+   * @returns {Promise<Array>} Flattened array of custom object data
+   */
   getCustomObjects(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Objects');
     const urls = Object.values(coQueryConfigs).map((conf) => {
@@ -86,6 +106,11 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Retrieves custom object attributes (fields) for configured custom objects
+   * @param {Object} coQueryConfigs - Configuration object mapping custom objects
+   * @returns {Promise<Array>} Flattened array of custom object attribute data
+   */
   getCustomObjectAttributes(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Object Attributes');
     const urls = Object.values(coQueryConfigs).map((conf) => {
@@ -136,6 +161,11 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Retrieves custom object attribute interactions for configured custom objects
+   * @param {Object} coQueryConfigs - Configuration object mapping custom objects with field interactions
+   * @returns {Promise<Array>} Flattened array of custom object attribute interaction data
+   */
   getCustomObjectAttributeInteractions(coQueryConfigs) {
     this.logger.coFiData('Fetching Custom Object Attribute Interactions');
     const urls = Object.values(coQueryConfigs).map((conf) => {
@@ -181,6 +211,13 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Retrieves all custom object attribute interactions for a specific user
+   * @param {string} entity - Entity name
+   * @param {string} objUrl - Custom object URL endpoint
+   * @param {string} username - Username to filter interactions by
+   * @returns {Promise<Object>} Object containing entity, url, and array of interactions
+   */
   getAllCustomObjectAttributeInteractions(entity, objUrl, username) {
     let where = `modifyingUser.username='${username}'`;
 
@@ -202,6 +239,17 @@ class CustomObjectInteractionsCrudService {
       });
   }
 
+  /**
+   * Adds a new custom object attribute interaction to Bullhorn
+   * @param {Object} FI - Field interaction configuration object
+   * @param {string} entity - Entity name
+   * @param {string} customObject - Custom object name
+   * @param {string} fieldName - Field name for the interaction
+   * @param {number} fieldMapId - Field map ID to associate with
+   * @param {string} interactionName - Name of the interaction
+   * @param {string} objUrl - Custom object URL endpoint
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   addCustomObjectAttributeInteraction(FI, entity, customObject, fieldName, fieldMapId, interactionName, objUrl) {
     FI.attribute = { id: fieldMapId };
     this.logger.debug(`Adding Custom Object Attribute Interaction: name: '${interactionName}', FI: (${JSON.stringify(FI)})`);
@@ -226,6 +274,16 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Updates an existing custom object attribute interaction in Bullhorn
+   * @param {Object} extensionFI - Updated field interaction configuration
+   * @param {string} entity - Entity name
+   * @param {string} customObject - Custom object name
+   * @param {string} fieldName - Field name for the interaction
+   * @param {Object} toUpdateFI - Existing interaction object with id and name
+   * @param {string} objUrl - Custom object URL endpoint
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   updateCustomObjectAttributeInteraction(extensionFI, entity, customObject, fieldName, toUpdateFI, objUrl) {
     this.logger.debug(`Updating Custom Object Attribute Interaction: #${toUpdateFI.id}, name: '${toUpdateFI.name}', toUpdateFI: (${JSON.stringify(toUpdateFI)})`);
 
@@ -250,6 +308,16 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Deletes a custom object attribute interaction from Bullhorn
+   * @param {string} objUrl - Custom object URL endpoint
+   * @param {number} id - Interaction ID to delete
+   * @param {string} entity - Entity name
+   * @param {number} objectNum - Custom object number
+   * @param {string} fieldName - Field name for the interaction
+   * @param {string} interactionName - Name of the interaction being deleted
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   deleteCustomObjectAttributeInteraction(objUrl, id, entity, objectNum, fieldName, interactionName) {
     this.logger.debug(`Deleting Custom Object Attribute Interaction: #${id}, name: '${interactionName}'`);
     const entityType = this.getEntityType(objUrl, 'AI');
@@ -272,6 +340,12 @@ class CustomObjectInteractionsCrudService {
     });
   }
 
+  /**
+   * Constructs the entity type string based on object URL and type suffix
+   * @param {string} objUrl - Custom object URL endpoint
+   * @param {string} [type=''] - Type suffix ('A' for Attribute, 'AI' for AttributeInteraction, 'CO' for CustomObject)
+   * @returns {string} Constructed entity type string
+   */
   getEntityType(objUrl, type = '') {
     switch (type) {
     case 'A':
@@ -285,6 +359,11 @@ class CustomObjectInteractionsCrudService {
     }
   }
 
+  /**
+   * Maps entity name to custom object type identifier
+   * @param {string} entityName - Entity name to map
+   * @returns {string} Custom object type identifier
+   */
   getCoTypeFromEntityName(entityName) {
     switch (entityName) {
     case ('Candidate/Client/Lead'):

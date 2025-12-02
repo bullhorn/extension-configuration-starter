@@ -2,13 +2,27 @@ const chalk = require('chalk');
 const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
+/**
+ * CRUD service for managing page interactions in Bullhorn
+ */
 class PageInteractionsCrudService {
+  /**
+   * Creates an instance of PageInteractionsCrudService
+   * @param {Object} _restApiClient - REST API client for Bullhorn
+   */
   constructor(_restApiClient) {
     this.apiClient = _restApiClient;
     this.logger = logger;
     this.resultsSvc = resultsSvc;
   }
 
+  /**
+   * Fetches page interaction data from Bullhorn API
+   * @param {string} entityType - Entity type to query
+   * @param {string} where - WHERE clause for query
+   * @param {string} fields - Comma-separated list of fields to retrieve
+   * @returns {Promise<Object>} Query result data
+   */
   fetchPageInteractionData(entityType, where, fields) {
     return this.apiClient.queryAll(entityType, where, fields)
       .then((result) => {
@@ -21,6 +35,11 @@ class PageInteractionsCrudService {
       });
   }
 
+  /**
+   * Fetches multiple page interactions based on selective actions configuration
+   * @param {Object} selectivePIActions - Object mapping actions to page interaction names
+   * @returns {Promise<Array>} Flattened array of page interaction data
+   */
   getPageInteractions(selectivePIActions) {
     const promiseList = [];
 
@@ -38,6 +57,11 @@ class PageInteractionsCrudService {
     });
   }
 
+  /**
+   * Fetches all page interactions for a specific user
+   * @param {string} username - Username to filter page interactions by
+   * @returns {Promise<Array>} Array of page interaction data
+   */
   getAllPageInteractions(username) {
     const where = `modifyingUser.username='${username}'`;
     const fields = 'id,name,action';
@@ -53,6 +77,13 @@ class PageInteractionsCrudService {
       });
   }
 
+  /**
+   * Adds a new page interaction to Bullhorn
+   * @param {Object} PI - Page interaction configuration object
+   * @param {string} action - Action type for the page interaction
+   * @param {string} pageInteraction - Name of the page interaction
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   addPageInteraction(PI, action, pageInteraction) {
     this.logger.debug(`Adding Page Interaction: name: '${pageInteraction}', PI: ${JSON.stringify(PI)}`);
     let resCode;
@@ -75,6 +106,13 @@ class PageInteractionsCrudService {
     });
   }
 
+  /**
+   * Updates an existing page interaction in Bullhorn
+   * @param {Object} PI - Page interaction configuration object with updated values
+   * @param {string} action - Action type for the page interaction
+   * @param {Object} pageInteraction - Existing page interaction object with id and name
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   updatePageInteraction(PI, action, pageInteraction) {
     this.logger.debug(`Updating Page Interaction: #${pageInteraction.id}, name: ${pageInteraction.name}, pageInteraction: ${JSON.stringify(pageInteraction)}`);
     let resCode;
@@ -97,6 +135,13 @@ class PageInteractionsCrudService {
     });
   }
 
+  /**
+   * Deletes a page interaction from Bullhorn
+   * @param {number} id - Page interaction ID to delete
+   * @param {string} action - Action type for the page interaction
+   * @param {string} interactionName - Name of the page interaction being deleted
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   deletePageInteraction(id, action, interactionName) {
     this.logger.debug(`Deleting Page Interaction #${id}, name: '${interactionName}'`);
     let resCode;

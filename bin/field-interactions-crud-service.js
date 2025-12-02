@@ -2,13 +2,28 @@ const chalk = require('chalk');
 const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
+/**
+ * CRUD service for managing field interactions in Bullhorn
+ */
 class FieldInteractionsCrudService {
+  /**
+   * Creates an instance of FieldInteractionsCrudService
+   * @param {Object} _restApiClient - REST API client for Bullhorn
+   */
   constructor(_restApiClient) {
     this.apiClient = _restApiClient;
     this.logger = logger;
     this.resultsSvc = resultsSvc;
   }
 
+  /**
+   * Fetches field interaction data from Bullhorn API
+   * @param {string} entityType - Type of entity to query (e.g., 'FieldMapInstance', 'FieldInteraction')
+   * @param {string} where - WHERE clause for the query
+   * @param {string} fields - Comma-separated list of fields to retrieve
+   * @param {string} entity - Entity name for tagging results
+   * @returns {Promise<Object>} Query result with data array
+   */
   fetchFieldInteractionData(entityType, where, fields, entity) {
     return this.apiClient.queryAll(entityType, where, fields)
       .then((result) => {
@@ -29,6 +44,12 @@ class FieldInteractionsCrudService {
       });
   }
 
+  /**
+   * Retrieves field map instances for specified field interactions and private label
+   * @param {Object} fieldInteractions - Object containing field interaction configurations
+   * @param {number} privateLabelId - Private label ID to filter by
+   * @returns {Promise<Array>} Flattened array of field map instances
+   */
   getFieldMapInstances(fieldInteractions, privateLabelId) {
     const promiseList = [];
 
@@ -53,6 +74,12 @@ class FieldInteractionsCrudService {
     });
   }
 
+  /**
+   * Retrieves field interactions for specified configurations and private label
+   * @param {Object} fieldInteractions - Object containing field interaction configurations
+   * @param {number} privateLabelId - Private label ID to filter by
+   * @returns {Promise<Array>} Flattened array of field interactions
+   */
   getFieldInteractions(fieldInteractions, privateLabelId) {
     const promiseList = [];
 
@@ -73,6 +100,11 @@ class FieldInteractionsCrudService {
     });
   }
 
+  /**
+   * Retrieves all field interactions for a specific user
+   * @param {string} username - Username to filter field interactions by
+   * @returns {Promise<Array>} Array of field interaction data
+   */
   getAllFieldInteractions(username) {
     const where = `modifyingUser.username='${username}'`;
     const fields = 'id,name,fieldName,entity';
@@ -88,6 +120,15 @@ class FieldInteractionsCrudService {
       });
   }
 
+  /**
+   * Adds a new field interaction to Bullhorn
+   * @param {Object} FI - Field interaction configuration object
+   * @param {string} entity - Entity name for the field interaction
+   * @param {string} fieldName - Field name for the interaction
+   * @param {number} fieldMapId - Field map ID to associate with
+   * @param {string} interactionName - Name of the field interaction
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   addFieldInteraction(FI, entity, fieldName, fieldMapId, interactionName) {
     this.logger.debug(`Adding Field Interaction: name: '${interactionName}' , FI: ${JSON.stringify(FI)}`);
     FI.fieldMapID = fieldMapId;
@@ -111,6 +152,14 @@ class FieldInteractionsCrudService {
     });
   }
 
+  /**
+   * Updates an existing field interaction in Bullhorn
+   * @param {Object} extensionFI - Updated field interaction configuration
+   * @param {string} entity - Entity name for the field interaction
+   * @param {string} fieldName - Field name for the interaction
+   * @param {Object} toUpdateFI - Existing field interaction object with id and name
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   updateFieldInteraction(extensionFI, entity, fieldName, toUpdateFI) {
     this.logger.debug(`Updating Field Map Interaction: #${toUpdateFI.id}, name: '${toUpdateFI.name}', toUpdateFI: ${JSON.stringify(toUpdateFI)}`);
     let resCode;
@@ -133,6 +182,14 @@ class FieldInteractionsCrudService {
     });
   }
 
+  /**
+   * Deletes a field interaction from Bullhorn
+   * @param {number} id - Field interaction ID to delete
+   * @param {string} entity - Entity name for the field interaction
+   * @param {string} fieldName - Field name for the interaction
+   * @param {string} interactionName - Name of the field interaction being deleted
+   * @returns {Promise<Object>} Result object containing status and response
+   */
   deleteFieldInteraction(id, entity, fieldName, interactionName) {
     this.logger.debug(`Deleting Field Map Interaction #${id}, name: '${interactionName}'`);
     let resCode;

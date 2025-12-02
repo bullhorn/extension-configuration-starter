@@ -10,7 +10,18 @@ const entityNameMapFileName = './entityNameMap.json';
 const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMapFileName, 'UTF-8'));
 const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
 
+/**
+ * Service for deploying custom object field interactions to Bullhorn
+ */
 class CustomObjectInteractionDeployService {
+  /**
+   * Creates an instance of CustomObjectInteractionDeployService
+   * @param {Object} _crudService - CRUD service for custom object interactions
+   * @param {Object} _entityCustomObjectsMap - Mapping of entities to custom objects
+   * @param {Object} _entityNameMap - Mapping of entity names and configurations
+   * @param {Object} _resultsSvc - Results service for handling deployment results
+   * @param {Object} _utils - Utility functions
+   */
   constructor(_crudService, _entityCustomObjectsMap, _entityNameMap, _resultsSvc, _utils) {
     this.crudService = _crudService;
     this.entityCustomObjectsMap = _entityCustomObjectsMap;
