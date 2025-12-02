@@ -15,7 +15,7 @@ class DeploymentUtils {
 
   print(command, args) {
     return new Promise((resolve, reject) => {
-      const childProcess = spawn(command, args);
+      const childProcess = spawn(command, args, { shell: true });
 
       this.logger.debug(childProcess.spawnargs.join(' '));
 
