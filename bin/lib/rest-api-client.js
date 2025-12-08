@@ -79,8 +79,10 @@ class RestApiClient {
       const nextQueryResponse = await this.auth.makeRequest(`query/${entityType}`, { method: 'POST', body: body });
       const nextPull = typeof nextQueryResponse.json === 'function' ? await nextQueryResponse.json() : nextQueryResponse;
       /* eslint-enable no-await-in-loop */
-      nextPull.data.push(...onePull.data);
-      Object.assign(onePull, nextPull);
+      onePull.data.push(...nextPull.data);
+      onePull.start = nextPull.start;
+      onePull.count = nextPull.count;
+      onePull.total = nextPull.total;
     }
 
     return onePull;
