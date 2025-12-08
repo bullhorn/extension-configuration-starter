@@ -1,19 +1,19 @@
 {
   "repository": "extension-configuration-starter",
   "license": "MIT",
-  "version": "2.0.1",
+  "version": "4.0.0",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
+    "selective-deploy:npe": "node bin/selective-build-and-upload.js npe",
+    "full-deploy:npe": "node bin/full-build-and-upload.js npe",
+    "selective-deploy:prod": "node bin/selective-build-and-upload.js prod",
+    "full-deploy:prod": "node bin/full-build-and-upload.js prod",
     "lint": "eslint --ext .ts . --format table",
     "lint:fix": "eslint --fix --ext .ts . --format table",
     "pre-commit": "lint-staged",
     "precommit:script": "husky add .husky/pre-commit \"npm run pre-commit\"",
     "commit-msg:script": "husky add .husky/commit-msg \"npx --no-install commitlint --edit \"$1\"\"",
-    "prepare": "husky install && npm run precommit:script && npm run commit-msg:script",
-    "full-deploy:prod": "node bin/full-build-and-upload.js prod",
-    "selective-deploy:prod": "node bin/selective-build-and-upload.js prod",
-    "full-deploy:staging": "node bin/full-build-and-upload.js staging",
-    "selective-deploy:staging": "node bin/selective-build-and-upload.js staging"
+    "prepare": "husky install && npm run precommit:script && npm run commit-msg:script"
   },
   "lint-staged": {
     "*.ts": [
@@ -21,11 +21,11 @@
     ]
   },
   "dependencies": {
-    "@bullhorn/bullhorn-cli": "^2.2.6",
+    "jsonfile": "^6.2.0",
+    "node-fetch": "^2.7.0",
     "rimraf": "^2.7.1",
     "tslint": "~5.10.0",
-    "typescript": "~3.5.3",
-    "winston": "^3.9.0"
+    "typescript": "~3.7.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^12.1.1",
@@ -37,6 +37,8 @@
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.22.1",
     "husky": "^6.0.0",
-    "lint-staged": "^10.5.4"
+    "lint-staged": "^10.5.4",
+    "winston": "3.17.0",
+    "@dabh/diagnostics": "2.0.3"
   }
 }

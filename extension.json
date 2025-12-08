@@ -10,6 +10,9 @@
     "CandidateCertification": [
       "./dist/field-interactions/candidate-certification/**"
     ],
+    "CandidateCertificationRequirement": [
+      "./dist/field-interactions/candidate-certification-requirement/**"
+    ],
     "CandidateEducation": [
       "./dist/field-interactions/candidate-education/**"
     ],
@@ -19,14 +22,21 @@
     "CandidateReference": [
       "./dist/field-interactions/candidate-reference/**"
     ],
+    "CandidateTaxInfo": [
+      "./dist/field-interactions/candidate-tax-info/**"
+    ],
     "CandidateWorkHistory": [
       "./dist/field-interactions/candidate-work-history/**"
     ],
-    "ClientCorporation": [
-      "./dist/field-interactions/client-corporation/**"
+    "CertificationGroup": [
+      "./dist/field-interactions/certification-group/**"
+    ],
+    "CertificationRequirement": [
+      "./dist/field-interactions/certification-requirement/**"
     ],
     "ClientCorporation1": [
-      "./dist/field-interactions/client-corporation/**"
+      "./dist/field-interactions/client-corporation/track-1/**",
+      "./dist/field-interactions/client-corporation/all/**"
     ],
     "ClientCorporation2": [
       "./dist/field-interactions/client-corporation/track-2/**",
@@ -46,9 +56,6 @@
     ],
     "ClientCorporationRateAgreementCardLine": [
       "./dist/field-interactions/client-corporation-rate-agreement-card-line/**"
-    ],
-    "ClientContact": [
-      "./dist/field-interactions/client-contact/**"
     ],
     "ClientContact1": [
       "./dist/field-interactions/client-contact/track-1/**",
@@ -72,6 +79,9 @@
     ],
     "ClientContactList": [
       "./dist/field-interactions/client-contact-list/**"
+    ],
+    "ComposeMessage": [
+      "./dist/field-interactions/compose-message/**"
     ],
     "EarnCode": [
       "./dist/field-interactions/earn-code/**"
@@ -110,6 +120,9 @@
     ],
     "JobSubmission": [
       "./dist/field-interactions/job-submission/**"
+    ],
+    "JobSubmissionCertificationRequirement": [
+      "./dist/field-interactions/job-submission-certification-requirement/**"
     ],
     "InvoiceTerm": [
       "./dist/field-interactions/invoice-term/**"
@@ -169,11 +182,17 @@
       "./dist/field-interactions/placement/track-5/**",
       "./dist/field-interactions/placement/all/**"
     ],
+    "PlacementCertification": [
+      "./dist/field-interactions/placement-certification/**"
+    ],
     "PlacementChangeRequest": [
       "./dist/field-interactions/placement-change-request/**"
     ],
     "PlacementRateCard": [
       "./dist/field-interactions/placement-rate-card/**"
+    ],
+    "PlacementRateCardChangeRequest": [
+      "./dist/field-interactions/placement-rate-card-change-request/**"
     ],
     "PlacementRateCardLine": [
       "./dist/field-interactions/placement-rate-card-line/**"
@@ -186,12 +205,6 @@
     ]
   },
   "customObjectFieldInteractions": {
-    "client-corporation-custom-object-1": [
-      "./dist/custom-objects/client-corporation-custom-object-1/**"
-    ],
-    "client-corporation-custom-object-4": [
-      "./dist/custom-objects/client-corporation-custom-object-4/**"
-    ],
     "person-custom-object-2": [
       "./dist/custom-objects/person-custom-object-2/**"
     ],
@@ -202,8 +215,8 @@
       "./dist/custom-objects/job-order-custom-object-2/**"
     ]
   },
- "pageInteractions": [
-    "./dist/page-interactions/record/modify-tabs/hide-all.js",
-    "./dist/page-interactions/record/modify-overview-fields/dumb.js"
+  "pageInteractions": [
+    "./dist/page-interactions/record/overview-field-modify/dumb.js",
+    "./dist/page-interactions/record/tab-modify/hide-all.js"
   ]
 }

@@ -1,280 +1,138 @@
-const fs = require('fs');
-const spawn = require('child_process').spawn;
-const jsonfile = require('jsonfile');
-const fetch = require('node-fetch');
-const { isAuthorized } = require('@bullhorn/bullhorn-cli/lib/auth');
 const chalk = require('chalk');
-const extractExtension = require('./extract-extension');
-const fieldInterDeploySvc = require('./field-interaction-deploy-service');
-const coInterDeploySvc = require('./custom-objects-interaction-deploy-service');
-const pageInterDeploySvc = require('./page-interaction-deploy-service');
+const fs = require('fs');
+const logger = require('./lib/logger');
+const extractExtension = require('./extract-extension-service');
+const injectionSvc = require('./injection-service');
+const intCleanSvc = require('./interaction-cleaning-service');
+const fieldIntDeploySvc = require('./field-interaction-deploy-service');
+const coIntDeploySvc = require('./custom-objects-interaction-deploy-service');
+const pageIntDeploySvc = require('./page-interaction-deploy-service');
 const resultsSvc = require('./results-service');
-const winston = require('winston');
+const { validateConfiguration, normalizeUsers } = require('./lib/config-validator');
+const { clean, build } = require('./lib/deployment-utils');
+const { uploadForUsers } = require('./lib/upload-orchestrator');
 
-const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.simple(),
-  transports: [
-    new winston.transports.Console({ format: winston.format.simple() }),
-    new winston.transports.File({ filename: './deploy-logs/error.log', level: 'error', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/combined.log', level: 'debug', format: winston.format.simple(), options: { flags: 'w' } }), ,
-  ],
-});
+const MIN_ARGS_LENGTH = 3;
 
-if (process.argv.length < 3) {
-  logger.error('Please pass an environment argument to build.');
-
-  process.exit();
-}
-
-const environment = process.argv[2];
-const fileName = `./environments/environment.${environment}.json`;
-
-if (!fs.existsSync(fileName)) {
-  logger.error(`Environment file with name ${fileName} does not exist...`);
-
-  process.exit();
-}
-
-const configuration = JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
-const entityCustomObjectsMapFileName = `./customObjectEntityMap.json`;
-const entityNameMapFileName = `./entityNameMap.json`;
-// if (process.argv.length == 4) {
-
-//   if (!fs.existsSync(selectiveFileName)) {
-//     logger.error(`Selective extension file with name ${selectiveFileName} does not exist...`);
-
-//     process.exit();
-//   }
-// }
-
-const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMapFileName, 'UTF-8'));
-const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
-
-function hasUsernameAndPassword(configuration) {
-  return configuration.username && configuration.password;
-}
-
-function hasUsers(configuration) {
-  if (Array.isArray(configuration.users) && configuration.users.length > 0) {
-    const invalidUsers = configuration.users.filter((user) => {
-      return !user.username || !user.password || !user.privateLabelId;
-    });
-
-    return invalidUsers.length === 0;
+class FullBuildAndUploadCommand {
+  constructor() {
+    this.logger = logger;
+    this.minArgsLength = MIN_ARGS_LENGTH;
+    this.extractExtension = extractExtension;
+    this.injectionSvc = injectionSvc;
+    this.intCleanSvc = intCleanSvc;
+    this.fieldIntDeploySvc = fieldIntDeploySvc;
+    this.coIntDeploySvc = coIntDeploySvc;
+    this.pageIntDeploySvc = pageIntDeploySvc;
+    this.resultsSvc = resultsSvc;
+    this.validateConfiguration = validateConfiguration;
+    this.normalizeUsers = normalizeUsers;
+    this.clean = clean;
+    this.build = build;
+    this.uploadForUsers = uploadForUsers;
   }
 
-  return false;
-}
-
-if (!configuration || (!hasUsernameAndPassword(configuration) && !hasUsers(configuration))) {
-  logger.error(`Configuration should have either a username or password, or an array of users that each have a username, password, and privateLabelId`, configuration);
-
-  process.exit();
-}
-
-if (configuration.deployDebug) {
-  logger.level = 'debug';
-  extractExtension.setUpService(true);
-  resultsSvc.setUpService(true);
-}
-
-const cmdSuffix = /^win/.test(process.platform) ? '.cmd' : '';
-const extensionsFileName = `./output/extension.json`;
-const lineBreaks = /(?:\r\n|\r|\n)/g;
-
-function print(command, arguments, callback) {
-  const process = spawn(command, arguments);
-
-  logger.debug(process.spawnargs.join(' '));
-
-  process.stdout.on('data', (data) => {
-    logger.debug(data.toString().replace(lineBreaks, ''));
-  });
-
-  process.stderr.on('data', (data) => {
-    logger.error(data.toString().replace(lineBreaks, ''));
-  });
-
-  process.on('exit', (code) => {
-    if (code !== 0) {
-      logger.error('Error performing process: exited with code ' + code);
-    } else {
-      callback();
+  validateArgs(args) {
+    if (args.length < this.minArgsLength) {
+      this.logger.error('Please pass an environment argument to build.');
+      return false;
     }
-  });
-
-  return process;
-}
-
-function getExtensionFile() {
-  if (!fs.existsSync(extensionsFileName)) {
-    logger.error('Error performing extract command; cannot remove page interactions');
-
-    process.exit(1);
+    return true;
   }
 
-  return fs.readFileSync(extensionsFileName, 'utf-8');
-}
+  loadConfiguration(environment) {
+    const fileName = `./environments/environment.${environment}.json`;
 
-function clean(callback) {
-  print(`rimraf${cmdSuffix}`, ['output', 'dist'], callback);
-}
-
-function build(callback) {
-  print(`tsc${cmdSuffix}`, [], callback);
-}
-
-
-
-function injectScript(configuration, script) {
-  Object.keys(configuration).forEach((propertyName) => {
-    if (Array.isArray(script)) {
-      script = script.map(function (x) { return x.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]); });
+    if (!fs.existsSync(fileName)) {
+      this.logger.error(`Environment file with name ${fileName} does not exist...`);
+      return null;
     }
-    else {
-      script = script.replace(new RegExp(`\\$\{${propertyName}\}`, 'g'), configuration[propertyName]);
+
+    return JSON.parse(fs.readFileSync(fileName, 'UTF-8'));
+  }
+
+  loadEntityMaps() {
+    const entityCustomObjectsMapFileName = './customObjectEntityMap.json';
+    const entityNameMapFileName = './entityNameMap.json';
+
+    const entityCustomObjectsMap = JSON.parse(fs.readFileSync(entityCustomObjectsMapFileName, 'UTF-8'));
+    const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
+
+    return { entityCustomObjectsMap: entityCustomObjectsMap, entityNameMap: entityNameMap };
+  }
+
+  setupDebugMode(configuration) {
+    if (configuration.deployDebug) {
+      this.logger.multiLog(chalk.yellow('Deploying in debug mode'), this.logger.multiLogLevels.debugIntData);
+      this.logger.level = 'debug';
     }
-  });
+  }
 
-  return script;
-}
+  async execute(args) {
+    if (!this.validateArgs(args)) {
+      process.exit();
+    }
 
+    const environment = args[2];
+    const configuration = this.loadConfiguration(environment);
 
-function inject(configuration, callback) {
-  const file = getExtensionFile();
-  const extensions = JSON.parse(file);
+    if (!configuration) {
+      process.exit();
+    }
 
-  if (extensions.fieldInteractions) {
-    Object.keys(extensions.fieldInteractions).forEach((entity) => {
-      if (extensions.fieldInteractions[entity]) {
-        for (let index = 0; index < extensions.fieldInteractions[entity].length; index++) {
-          extensions.fieldInteractions[entity][index].script = injectScript(configuration, extensions.fieldInteractions[entity][index].script);
+    const { entityCustomObjectsMap, entityNameMap } = this.loadEntityMaps();
 
-          if (extensions.fieldInteractions[entity][index].privateLabelIds) {
-            extensions.fieldInteractions[entity][index].privateLabelIds = injectScript(configuration, extensions.fieldInteractions[entity][index].privateLabelIds);
-          }
-        }
+    if (!this.validateConfiguration(configuration)) {
+      process.exit();
+    }
+
+    this.setupDebugMode(configuration);
+
+    try {
+      const users = this.normalizeUsers(configuration);
+
+      if (!users) {
+        process.exit();
       }
-    });
-  }
-  if (extensions.customObjectFieldInteractions) {
-    Object.keys(extensions.customObjectFieldInteractions).forEach((entity) => {
-      if (extensions.customObjectFieldInteractions[entity]) {
-        for (let index = 0; index < extensions.customObjectFieldInteractions[entity].length; index++) {
-          extensions.customObjectFieldInteractions[entity][index].script = injectScript(configuration, extensions.customObjectFieldInteractions[entity][index].script);
 
-          if (extensions.customObjectFieldInteractions[entity][index].privateLabelIds) {
-            extensions.customObjectFieldInteractions[entity][index].privateLabelIds = injectScript(configuration, extensions.customObjectFieldInteractions[entity][index].privateLabelIds);
-          }
-        }
-      }
-    });
-  }
+      await this.uploadForUsers({
+        users: users,
+        configuration: configuration,
+        clean: this.clean,
+        build: this.build,
+        extractExtension: this.extractExtension,
+        injectionSvc: this.injectionSvc,
+        uploadType: 'full',
+        services: {
+          intCleanSvc: this.intCleanSvc,
+          fieldIntDeploySvc: this.fieldIntDeploySvc,
+          coIntDeploySvc: this.coIntDeploySvc,
+          pageIntDeploySvc: this.pageIntDeploySvc,
+        },
+        resultsSvc: this.resultsSvc,
+        validatePrerequisites: () => {
+          return entityCustomObjectsMap && entityNameMap;
+        },
+        preprocessExtensions: async (extensions, privateLabelId) => {
+          return this.intCleanSvc.removeUnnecessaryFieldInteractions(extensions, privateLabelId);
+        },
+      });
 
-  if (extensions.pageInteractions) {
-    for (let index = 0; index < extensions.pageInteractions.length; index++) {
-      extensions.pageInteractions[index].script = injectScript(configuration, extensions.pageInteractions[index].script);
+      this.logger.info('Deployment complete please view the results for each user above');
+      this.logger.printSeparator();
+    } catch (error) {
+      this.logger.error(chalk.red('Error occurred during full-build-and-upload', error));
+      process.exit();
     }
   }
-
-  console.log('Successfully injected environment variables');
-  callback(extensions);
-
 }
 
-function auth(username, password, callback) {
-  const auth = print(`bullhorn${cmdSuffix}`, ['auth', 'login', `--username=${username}`, `--password=${password}`], callback);
-
-  auth.stdout.on('data', (data) => {
-    const content = data.toString().replace(lineBreaks, '');
-
-    if (content.toLowerCase().indexOf('error') !== -1) {
-      logger.error('Error occurred during authorization, exiting.');
-
-      process.exit(1);
-    }
-  });
+// Execute if run directly
+if (require.main === module) {
+  const command = new FullBuildAndUploadCommand();
+  command.execute(process.argv);
 }
 
-function fullUpload(privateLabelId, extensions, callback) {
-  logger.info(`Full uploading...`);
-  return isAuthorized()
-    .then((credentials) => {
-      const rest = credentials.sessions.find(s => s.name === 'rest').value;
-      const restConfig = { url: rest.endpoint, token: rest.token };
-      fieldInterDeploySvc.setUpService(configuration.deployDebug, restConfig);
-      coInterDeploySvc.setUpService(configuration.deployDebug, restConfig);
-      pageInterDeploySvc.setUpService(configuration.deployDebug, restConfig);
-      return fieldInterDeploySvc.deployAllFieldInteractions(privateLabelId, extensions)
-        .then(fiResults => {
-          return coInterDeploySvc.deployAllCOFieldInteractions(extensions).then(coFIResults => {
-            return pageInterDeploySvc.deployAllPageInteractions(extensions)
-            .then(piResults => ({ fieldInteractions: fiResults, customObjectFIs: coFIResults, pageInteractions: piResults })).then(results => {
-              resultsSvc.printResults(results, privateLabelId);
-              return callback();
-            });
-          });
-        });
-    });
-}
-
-
-function authAndFullUpload(username, password, privateLabelId, extensions, callback) {
-  return auth(username, password, () => {
-    return fullUpload(privateLabelId, extensions,callback)
-  });
-}
-
-function getExtensionId() {
-  const file = getExtensionFile();
-
-  return extensions.name;
-}
-
-function uploadForUsers(users, callback) {
-  logger.info('Upoading for ' + users[0].username);
-  logger.info('Private Label --> ' + users[0].privateLabelId);
-  clean(() => {
-    build(() => {
-      extractExtension.extract(() => {
-        inject(configuration, (extensions) => {
-          if (entityCustomObjectsMap && entityNameMap) {
-
-            return authAndFullUpload(users[0].username, users[0].password, users[0].privateLabelId, extensions,(results) => {
-              const nextUsers = users.slice(1)
-              if (nextUsers.length) {
-                uploadForUsers(users.slice(1), callback);
-              } else {
-                return callback();
-              }
-            });
-          } else {
-            logger.error(chalk.red('no fieldnameMap.json and/or  customObjectEntityMap.json file aborting deployment'));
-            process.exit(1);
-          }
-        });
-      })
-    });
-  });
-}
-
-try {
-  let users = []
-  if (configuration.username && configuration.password && !Array.isArray(configuration.users)) {
-    console.debug('Only one user Found');
-    users.push({ username: configuration.username, password: configuration.password });
-  } else if (configuration.users && Array.isArray(configuration.users) && configuration.users.length > 0) {
-    users = configuration.users
-  } else {
-    logger.error('No Users Found, aborting upload. Please check your environment File and add at least one user');
-    process.exit(1);
-  }
-  uploadForUsers(users, () => {
-    logger.info('Deployment complete please view the results above');
-  });
-
-} catch (error) {
-  logger.error(chalk.red('Error occured during build-and-upload', error));
-  process.exit(1);
-}
+module.exports = {
+  FullBuildAndUploadCommand,
+};

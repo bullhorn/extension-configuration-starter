@@ -1,176 +1,262 @@
-const fs = require('fs');
-const pageInteRestSvc = require('./page-interactions-crud-service');
 const chalk = require('chalk');
+const logger = require('./lib/logger');
+const PageInteractionsCrudService = require('./page-interactions-crud-service');
 const resultsSvc = require('./results-service');
-const winston = require('winston');
-const { Utils } = require('tslint');
 const utils = require('./utils');
 
-
-const logger = winston.createLogger({
-  levels: utils.loggingLevels.levels,
-  level: 'info',
-  format: winston.format.simple(),
-  transports: [
-    new winston.transports.Console({ format: winston.format.simple() }),
-    new winston.transports.File({ filename: './deploy-logs/error.log', level: 'error', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/combined.log', level: 'debug', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/dev-logs.log', level: 'dev', format: winston.format.simple(), options: { flags: 'w' } })
-  ],
-});
-
-function setUpService(debug, rest) {
-  if (debug) {
-    logger.level = 'debug';
+/**
+ * Service for deploying page interactions to Bullhorn
+ */
+class PageInteractionDeployService {
+  /**
+   * Creates an instance of PageInteractionDeployService
+   * @param {Object} _crudService - CRUD service for page interactions
+   * @param {Object} _resultsSvc - Results service for handling deployment results
+   * @param {Object} _utils - Utility functions
+   */
+  constructor(_crudService, _resultsSvc, _utils) {
+    this.crudService = _crudService;
+    this.resultsSvc = _resultsSvc;
+    this.utils = _utils;
+    this.logger = logger;
   }
-  pageInteRestSvc.setUpService(debug, rest);
-  resultsSvc.setUpService(debug);
-}
 
-
-function deploySelectedPageInteractions(selectiveExtensions, extensions) {
-  if(!selectiveExtensions.pageInteractions) {
-    return Promise.resolve([]);
+  /**
+   * Builds configuration for selective page interaction deployment
+   * @param {Object} selectiveExtensions - Selective extensions configuration
+   * @returns {Object} Page interactions configuration
+   */
+  buildSelectedConfig(selectiveExtensions) {
+    return selectiveExtensions.pageInteractions;
   }
-  const selectivePageInteractions = selectiveExtensions.pageInteractions;
-  logger.debug('Selective Page Interactions deploy');
-  return pageInteRestSvc.getPageinteractions(selectivePageInteractions).then(data => {
-    if (data) {
-      const uploadConfig = createSelectiveUploadConfig(data, selectivePageInteractions);
-      logger.debug('piUploadConfig: ', JSON.stringify(uploadConfig));
-      promiseList = [];
-      results = [];
-      Object.keys(uploadConfig).forEach(action => {
-        if (uploadConfig[action].toUpdate) {
-          logger.debug('Updating Page Interactions for Action: ', action);
-          uploadConfig[action].toUpdate.forEach(pageInteraction => {
-            logger.debug('Updating Field Interactions for interaction: ', pageInteraction);
-            const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction.name === pi.name && action === pi.action);
-            if (extensionsPI) {
-              promiseList.push(pageInteRestSvc.updatePageInteraction(extensionsPI, action, pageInteraction));
-            } else {
-              logger.warn(chalk.yellow(`Can't find '${pageInteraction.name}' for '${action}' in extentions file Page interaction will not be deployed!`));
-              results.push(resultsSvc.handleUpdatePIFail(action, pageInteraction,
-                `could not find ${pageInteraction.name} for ${action} in extention file`));
-            }
-          });
-        }
-        if (uploadConfig[action].toAdd) {
-          logger.debug('Adding Page Interactions for Action: ', action);
-          uploadConfig[action].toAdd.forEach(pageInteraction => {
-            logger.debug('Updating Field Interactions for interaction: ', pageInteraction);
-            const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction === pi.name && action === pi.action);
-            if (extensionsPI) {
-              promiseList.push(pageInteRestSvc.AddPageInteraction(extensionsPI, action, pageInteraction));
-            } else {
-              logger.warn(chalk.yellow(`Can't find '${pageInteraction}' for '${action}' in extentions file Page interaction will not be deployed!`));
-              results.push(resultsSvc.handleAddPIFail(action, pageInteraction,
-                `could not find ${pageInteraction} for ${action} in extention file`));
-            }
-          });
-        }
-      });
-      return Promise.allSettled(promiseList).then(repsonses => {
-        const responseValues = repsonses.map(repsonse => repsonse.value);
-        responseValues.forEach(value => {
+
+  /**
+   * Builds configuration for full page interaction deployment
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Object} Page interactions configuration organized by action
+   */
+  buildFullConfig(extensions) {
+    const fullConfig = {};
+
+    if (extensions.pageInteractions && extensions.pageInteractions.length > 0) {
+      const actions = extensions.pageInteractions.map((piAction) => {
+        return piAction.action;
+      }).filter(this.utils.onlyUnique);
+
+      actions.forEach((action) => {
+        fullConfig[action] = extensions.pageInteractions.filter((piAction) => {
+          return piAction.action === action;
+        }).map((piName) => {
+          return piName.name;
         });
-        return results.concat(responseValues).flat();
       });
     }
-  });
-}
 
-function deployAllPageInteractions(extensions) {
-  const fullConfig = {};
-  if (extensions.pageInteractions) {
-      const actions = extensions.pageInteractions.map(piAction => piAction.action).filter(utils.onlyUnique);
-      actions.forEach(action => {
-        fullConfig[action] = extensions.pageInteractions.filter(piAction => piAction.action === action).map(piName => piName.name);
-    });
-  } else {
-    logger.warn(chalk.yellow(`Could not  field interactions in extentions field interactions will be skipped`));
-    return Promise.resolve([]);
+    return fullConfig;
   }
-  logger.debug('Full Page Interactions deploy');
-  return pageInteRestSvc.getPageinteractions(fullConfig).then(piData => {
-    if (piData) {
-      const uploadConfig = createSelectiveUploadConfig(piData, fullConfig);
-      logger.debug('piUploadConfig: ', JSON.stringify(uploadConfig));
-      promiseList = [];
-      results = [];
-      Object.keys(uploadConfig).forEach(action => {
-        if (uploadConfig[action].toUpdate) {
-          logger.debug('Updating Page Interactions for Action: ', action);
-          uploadConfig[action].toUpdate.forEach(pageInteraction => {
-            logger.debug('Updating Field Interactions for interaction: ', pageInteraction);
-            const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction.name === pi.name && action === pi.action);
-            if (extensionsPI) {
-              promiseList.push(pageInteRestSvc.updatePageInteraction(extensionsPI, action, pageInteraction));
-            } else {
-              logger.warn(chalk.yellow(`Can't find '${pageInteraction.name}' for '${action}' in extentions file Page interaction will not be deployed!`));
-              results.push(resultsSvc.handleUpdatePIFail(action, pageInteraction,
-                `could not find ${pageInteraction.name} for ${action} in extention file`));
-              logger.verbose(JSON.stringify(results));
-            }
+
+  /**
+   * Processes upload configuration and creates promises for add/update operations
+   * @param {Object} uploadConfig - Upload configuration with toAdd and toUpdate arrays
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Object} Object containing promiseList and results arrays
+   */
+  processUploadConfig(uploadConfig, extensions) {
+    const promiseList = [];
+    const results = [];
+
+    Object.keys(uploadConfig).forEach((action) => {
+      if (uploadConfig[action].toUpdate) {
+        this.logger.multiLog(`Updating Page Interactions for action: ${action}`, this.logger.multiLogLevels.debugPiData);
+
+        uploadConfig[action].toUpdate.forEach((pageInteraction) => {
+          this.logger.multiLog(`Updating Page Interaction: '${pageInteraction.name}'`, this.logger.multiLogLevels.debugPiData);
+          const extensionsPI = extensions.pageInteractions.find((pi) => {
+            return pageInteraction.name === pi.name && action === pi.action;
           });
-        }
-        if (uploadConfig[action].toAdd) {
-          logger.debug('Adding Page Interactions for Action: ', action);
-          uploadConfig[action].toAdd.forEach(pageInteraction => {
-            logger.debug('Updating Field Interactions for interaction: ', pageInteraction);
-            const extensionsPI = extensions.pageInteractions.find(pi => pageInteraction === pi.name && action === pi.action);
-            if (extensionsPI) {
-              promiseList.push(pageInteRestSvc.AddPageInteraction(extensionsPI, action, pageInteraction));
-            } else {
-              logger.warn(chalk.yellow(`Can't find '${pageInteraction}' for '${action}' in extentions file Page interaction will not be deployed!`));
-              results.push(resultsSvc.handleAddPIFail(action, pageInteraction,
-                `could not find ${pageInteraction} for ${action} in extention file`));
-            }
+
+          if (extensionsPI) {
+            const wrappedPromise = this.crudService.updatePageInteraction(extensionsPI, action, pageInteraction)
+              .catch((error) => {
+                return this.resultsSvc.handleUpdatePIFail(action, pageInteraction, `API call failed: ${error.message}`);
+              });
+            promiseList.push(wrappedPromise);
+          } else {
+            this.logger.multiLog(chalk.yellow(`Could not find '${pageInteraction.name}' for '${action}' in extensions file. Page Interaction will not be deployed!`), this.logger.multiLogLevels.warnPiData);
+            results.push(this.resultsSvc.handleUpdatePIFail(action, pageInteraction, `Could not find ${pageInteraction.name} for ${action} in extension file`));
+          }
+        });
+      }
+
+      if (uploadConfig[action].toAdd) {
+        this.logger.multiLog(`Adding Page Interactions for action: ${action}`, this.logger.multiLogLevels.debugPiData);
+
+        uploadConfig[action].toAdd.forEach((pageInteraction) => {
+          this.logger.multiLog(`Adding Page Interaction: ${pageInteraction}`, this.logger.multiLogLevels.debugPiData);
+          const extensionsPI = extensions.pageInteractions.find((pi) => {
+            return pageInteraction === pi.name && action === pi.action;
           });
-        }
-      });
-      return Promise.allSettled(promiseList).then(repsonses => {
-        const responseValues = repsonses.map(repsonse => repsonse.value);
-        return results.concat(responseValues).flat();
-      });
+
+          if (extensionsPI) {
+            const wrappedPromise = this.crudService.addPageInteraction(extensionsPI, action, pageInteraction)
+              .catch((error) => {
+                return this.resultsSvc.handleAddPIFail(action, pageInteraction, `API call failed: ${error.message}`);
+              });
+            promiseList.push(wrappedPromise);
+          } else {
+            this.logger.multiLog(chalk.yellow(`Could not find '${pageInteraction}' for '${action}' in extensions file. Page Interaction will not be deployed!`), this.logger.multiLogLevels.warnPiData);
+            results.push(this.resultsSvc.handleAddPIFail(action, pageInteraction, `Could not find ${pageInteraction} for ${action} in extension file`));
+          }
+        });
+      }
+    });
+
+    return { promiseList, results };
+  }
+
+  /**
+   * Deploys page interactions based on configuration
+   * @param {Object} pageInteractionsConfig - Page interactions configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  async deployPageInteractions(pageInteractionsConfig, extensions) {
+    if (!pageInteractionsConfig || Object.keys(pageInteractionsConfig).length === 0) {
+      return [];
     }
-  });
+
+    const piData = await this.crudService.getPageInteractions(pageInteractionsConfig);
+
+    if (!piData) {
+      return [];
+    }
+
+    const uploadConfig = this.createPageInteractionsUploadConfig(piData, pageInteractionsConfig);
+    this.logger.multiLog(`Page Interactions uploadConfig: ${JSON.stringify(uploadConfig)}`, this.logger.multiLogLevels.debugPiData);
+
+    const { promiseList, results } = this.processUploadConfig(uploadConfig, extensions);
+
+    const responses = await Promise.allSettled(promiseList);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
+
+    return results.concat(responseValues).flat();
+  }
+
+  /**
+   * Deploys selected page interactions from selective configuration
+   * @param {Object} selectiveExtensions - Selective extensions configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be deployed
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  deploySelectedPageInteractions(selectiveExtensions, extensions, deployFiOnly) {
+    if (deployFiOnly) {
+      this.logger.multiLog(chalk.yellow('Skipping deploy Page Interactions because they were already deployed within first user'), this.logger.multiLogLevels.warnPiData);
+      return [];
+    }
+
+    if (!selectiveExtensions.pageInteractions || Object.keys(selectiveExtensions.pageInteractions).length === 0) {
+      this.logger.multiLog(chalk.yellow('Could not find Page Interactions in "selective-extension.json" file. Page Interactions will be skipped!'), this.logger.multiLogLevels.warnPiData);
+      return [];
+    }
+
+    this.logger.multiLog('Selective Page Interactions deploy', this.logger.multiLogLevels.debugPiData);
+    const config = this.buildSelectedConfig(selectiveExtensions);
+    return this.deployPageInteractions(config, extensions);
+  }
+
+  /**
+   * Deploys all page interactions from extension configuration
+   * @param {Object} extensions - Full extensions configuration
+   * @param {boolean} deployFiOnly - Flag indicating if only field interactions should be deployed
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  deployAllPageInteractions(extensions, deployFiOnly) {
+    if (deployFiOnly) {
+      this.logger.multiLog(chalk.yellow('Skipping deploy Page Interactions because they were already deployed within first user'), this.logger.multiLogLevels.warnPiData);
+      return [];
+    }
+
+    const config = this.buildFullConfig(extensions);
+
+    if (!config || Object.keys(config).length === 0) {
+      this.logger.multiLog(chalk.yellow('Could not find Page Interactions in "extension.json" file. Page Interactions will be skipped!'), this.logger.multiLogLevels.warnPiData);
+      return [];
+    }
+
+    this.logger.multiLog('Full Page Interactions deploy', this.logger.multiLogLevels.debugPiData);
+    return this.deployPageInteractions(config, extensions);
+  }
+
+  /**
+   * Creates upload configuration from page interaction data
+   * @param {Array} piData - Page interaction data from Bullhorn
+   * @param {Object} pageInteractions - Page interactions configuration
+   * @returns {Object} Upload configuration with toAdd and toUpdate arrays
+   */
+  createPageInteractionsUploadConfig(piData, pageInteractions) {
+    const uploadConfig = {};
+
+    Object.keys(pageInteractions).forEach((action) => {
+      uploadConfig[action] = {};
+      const toUpdateNameID = [];
+      const toAddNames = [];
+
+      for (const selectivePI of pageInteractions[action]) {
+        if (piData.find((pi) => {
+          return pi.action === action && pi.name === selectivePI;
+        })) {
+          const id = piData.find((pi) => {
+            return pi.action === action && pi.name === selectivePI;
+          }).id;
+          toUpdateNameID.push({ name: selectivePI, id: id });
+        } else {
+          toAddNames.push(selectivePI);
+        }
+      }
+
+      if (toUpdateNameID.length) {
+        if (!uploadConfig[action].toUpdate) {
+          uploadConfig[action].toUpdate = {};
+        }
+
+        uploadConfig[action].toUpdate = toUpdateNameID;
+      }
+
+      if (toAddNames.length) {
+        if (!uploadConfig[action].toAdd) {
+          uploadConfig[action].toAdd = {};
+        }
+
+        uploadConfig[action].toAdd = toAddNames;
+      }
+    });
+
+    return uploadConfig;
+  }
 }
 
+// Backward compatible module-level interface
+let serviceInstance;
 
-function createSelectiveUploadConfig(piData, pageInteractions) {
-  const uploadConfig = {};
-  Object.keys(pageInteractions).forEach(action => {
-    uploadConfig[action] = {};
-    logger.debug('createPIUploadConfig pageInteractions: ', pageInteractions)
-    const toUpdateNameID = [];
-    const toAddNames = [];
-    for (const selectivePI of pageInteractions[action]) {
-      if (piData.find(pi => pi.action === action && pi.name === selectivePI)) {
-        const id = piData.find(pi => pi.action === action && pi.name === selectivePI).id
-        toUpdateNameID.push({ name: selectivePI, id: id });
-      } else {
-        toAddNames.push(selectivePI);
-      }
-    }
-    if (toUpdateNameID.length) {
-      if (!uploadConfig[action].toUpdate) {
-        uploadConfig[action].toUpdate = {}
-      }
-      uploadConfig[action].toUpdate = toUpdateNameID;
-    }
-    if (toAddNames.length) {
-      if (!uploadConfig[action].toAdd) {
-        uploadConfig[action].toAdd = {}
-      }
-      uploadConfig[action].toAdd = toAddNames;
-    }
-  });
-  return uploadConfig;
+function setUpService(restApiClient) {
+  const crudService = new PageInteractionsCrudService(restApiClient);
+  serviceInstance = new PageInteractionDeployService(crudService, resultsSvc, utils);
+}
+
+function deploySelectedPageInteractions(selectiveExtensions, extensions, deployFiOnly) {
+  return serviceInstance.deploySelectedPageInteractions(selectiveExtensions, extensions, deployFiOnly);
+}
+
+function deployAllPageInteractions(extensions, deployFiOnly) {
+  return serviceInstance.deployAllPageInteractions(extensions, deployFiOnly);
 }
 
 module.exports = {
+  PageInteractionDeployService,
+  setUpService,
   deploySelectedPageInteractions,
   deployAllPageInteractions,
-  setUpService
 };

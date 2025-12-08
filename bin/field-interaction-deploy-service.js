@@ -1,314 +1,348 @@
-const fs = require('fs');
-const fieldInteRestSvc = require('./field-interactions-crud-service');
 const chalk = require('chalk');
+const fs = require('fs');
+const FieldInteractionsCrudService = require('./field-interactions-crud-service');
+const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
-const winston = require('winston');
 const utils = require('./utils');
 
-const logger = winston.createLogger({
-  levels: utils.loggingLevels.levels,
-  level: 'info',
-  format: winston.format.simple(),
-  transports: [
-    new winston.transports.Console({ format: winston.format.simple() }),
-    new winston.transports.File({ filename: './deploy-logs/error.log', level: 'error', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/combined.log', level: 'debug', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/dev-logs.log', level: 'dev', format: winston.format.simple(), options: { flags: 'w' } })
-  ],
-});
-
-const entityNameMapFileName = `./entityNameMap.json`;
+const entityNameMapFileName = './entityNameMap.json';
 const entityNameMap = JSON.parse(fs.readFileSync(entityNameMapFileName, 'UTF-8'));
 
-function setUpService(debug, rest) {
-  if (debug) {
-    logger.level = 'debug';
+/**
+ * Service for deploying field interactions to Bullhorn
+ */
+class FieldInteractionDeployService {
+  /**
+   * Creates an instance of FieldInteractionDeployService
+   * @param {Object} _crudService - CRUD service for field interactions
+   * @param {Object} _entityNameMap - Mapping of entity names
+   * @param {Object} _resultsSvc - Results service for handling deployment results
+   * @param {Object} _utils - Utility functions
+   */
+  constructor(_crudService, _entityNameMap, _resultsSvc, _utils) {
+    this.crudService = _crudService;
+    this.entityNameMap = _entityNameMap;
+    this.resultsSvc = _resultsSvc;
+    this.utils = _utils;
+    this.logger = logger;
   }
-  fieldInteRestSvc.setUpService(debug, rest);
-  resultsSvc.setUpService(debug);
+
+  /**
+   * Validates configuration and logs warning if invalid
+   * @param {Object} config - Configuration object to validate
+   * @param {string} configName - Name of configuration for logging
+   * @returns {boolean} True if valid, false otherwise
+   */
+  validateConfigOrWarn(config, configName) {
+    if (!config || Object.keys(config).length === 0) {
+      this.logger.multiLog(chalk.yellow(`Could not find ${configName}. This will be skipped!`), this.logger.multiLogLevels.warnFiData);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Builds configuration for full deployment from extensions
+   * @param {Object} extensions - Extension configuration containing field interactions
+   * @returns {Object} Full configuration object
+   */
+  buildFullConfig(extensions) {
+    const fullCOConfig = {};
+
+    if (extensions.fieldInteractions && Object.keys(extensions.fieldInteractions).length > 0) {
+      Object.entries(extensions.fieldInteractions).forEach(([ extKey, extVal ]) => {
+        if (this.entityNameMap[extKey]) {
+          fullCOConfig[extKey] = { entityName: this.entityNameMap[extKey].entityName, fields: [] };
+          const fields = extVal.map((fi) => {
+            return fi.fieldName.toLowerCase();
+          }).filter(this.utils.onlyUnique);
+
+          fields.forEach((field) => {
+            const fieldFIs = extVal.filter((extFI) => {
+              return extFI.fieldName.toLowerCase() === field.toLowerCase();
+            }).map((extFI) => {
+              return extFI.name;
+            });
+            fullCOConfig[extKey].fields.push({ fieldName: field, fieldInteractionNames: fieldFIs });
+          });
+        } else {
+          this.logger.multiLog(chalk.yellow(`Could not find ${extKey} in 'entityNameMap.json'. This entity will be skipped!`), this.logger.multiLogLevels.warnFiData);
+          this.logger.multiLog(chalk.yellow('Please check the \'extensions.json\' to ensure all the Field Interaction entities are in the \'entityNameMap.json\''), this.logger.multiLogLevels.warnFiData);
+        }
+      });
+    }
+
+    return fullCOConfig;
+  }
+
+  /**
+   * Builds configuration for selective deployment
+   * @param {Object} selectiveExtensions - Selective extension configuration
+   * @returns {Object} Selected configuration object
+   */
+  buildSelectedConfig(selectiveExtensions) {
+    const selectedFieldInteraction = selectiveExtensions.fieldInteractions;
+
+    Object.entries(selectedFieldInteraction).forEach(([ selKey, selVal ]) => {
+      if (this.entityNameMap[selKey]) {
+        selVal.entityName = this.entityNameMap[selKey].entityName;
+      } else {
+        this.logger.multiLog(chalk.yellow(`Could not ${selKey} in 'entityNameMap.json'. This entity will be skipped!`), this.logger.multiLogLevels.warnFiData);
+        this.logger.multiLog(chalk.yellow('Please check the \'selective-extension.json\' to ensure all the Field Interaction entities are in the \'entityNameMap.json\''), this.logger.multiLogLevels.warnFiData);
+      }
+    });
+
+    return selectedFieldInteraction;
+  }
+
+  processUploadConfig(uploadConfig, extensions, privateLabelId) {
+    const promiseList = [];
+    const results = [];
+
+    if (!extensions.fieldInteractions) {
+      this.logger.multiLog(chalk.yellow('Could not find any Field Interaction in extensions file! All Field Interactions will not be deployed!'), this.logger.multiLogLevels.warnFiData);
+      results.push(this.resultsSvc.handleFIExtensionsFail(uploadConfig));
+      return { promiseList, results };
+    }
+
+    Object.keys(uploadConfig).forEach((entity) => {
+      if (!extensions.fieldInteractions[entity]) {
+        this.logger.multiLog(chalk.yellow(`Could not find '${entity}' in extensions file, Field Interactions for '${entity}' will not be deployed!`), this.logger.multiLogLevels.warnFiData);
+        results.push(this.resultsSvc.handleFIEntityFail(entity, uploadConfig[entity], `Unable to find entity '${entity}' in extensions file`));
+        return;
+      }
+
+      if (uploadConfig[entity].toUpdate) {
+        this.logger.multiLog(`Updating Field Interactions for entity: ${entity}`, this.logger.multiLogLevels.debugFiData);
+
+        Object.keys(uploadConfig[entity].toUpdate).forEach((fieldKey) => {
+          this.logger.multiLog(`Updating Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugFiData);
+
+          uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach((interaction) => {
+            const extensionFI = extensions.fieldInteractions[entity].find((fi) => {
+              return interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
+
+            if (extensionFI) {
+              const { privateLabelIds } = extensionFI;
+
+              if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                const wrappedPromise = this.crudService.updateFieldInteraction(extensionFI, entity, fieldKey, interaction)
+                  .catch((error) => {
+                    return this.resultsSvc.handleUpdateFIFail(entity, fieldKey, interaction.name, `API call failed: ${error.message}`);
+                  });
+                promiseList.push(wrappedPromise);
+              } else {
+                this.logger.multiLog(`Field Interaction ${interaction.name} skipped for Private Label #${privateLabelId}`, this.logger.multiLogLevels.infoFiData);
+              }
+            } else {
+              this.logger.multiLog(chalk.yellow(`Could not find '${interaction.name}' for '${fieldKey}' in extensions file. Field Interaction will not be deployed!`), this.logger.multiLogLevels.warnFiData);
+              results.push(this.resultsSvc.handleUpdateFIFail(entity, fieldKey, interaction.name, `Could not find ${interaction.name} in ${entity}.${fieldKey} in extension file`));
+            }
+          });
+        });
+      }
+
+      if (uploadConfig[entity].toAdd) {
+        this.logger.multiLog(`Adding Field Interactions for entity: ${entity}`, this.logger.multiLogLevels.debugFiData);
+
+        Object.keys(uploadConfig[entity].toAdd).forEach((fieldKey) => {
+          this.logger.multiLog(`Adding Field Interactions for field: ${fieldKey}`, this.logger.multiLogLevels.debugFiData);
+
+          uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach((interactionName) => {
+            const extensionFI = extensions.fieldInteractions[entity].find((fi) => {
+              return interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase();
+            });
+
+            if (extensionFI) {
+              const { privateLabelIds } = extensionFI;
+
+              if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
+                const wrappedPromise = this.crudService.addFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName)
+                  .catch((error) => {
+                    return this.resultsSvc.handleAddFIFail(entity, fieldKey, interactionName, `API call failed: ${error.message}`);
+                  });
+                promiseList.push(wrappedPromise);
+              } else {
+                this.logger.multiLog(`Field Interaction ${interactionName} skipped for Private Label #${privateLabelId}`, this.logger.multiLogLevels.infoFiData);
+              }
+            } else {
+              this.logger.multiLog(chalk.yellow(`Could not find '${interactionName}' for '${fieldKey}' in extensions file. Field Interaction will not be deployed!`), this.logger.multiLogLevels.warnFiData);
+              results.push(this.resultsSvc.handleAddFIFail(entity, fieldKey, interactionName, `Could not find ${interactionName} in ${entity}.${fieldKey} in extension file`));
+            }
+          });
+        });
+      }
+    });
+
+    return { promiseList, results };
+  }
+
+  /**
+   * Deploys field interactions for given configuration
+   * @param {Object} fieldInteractionsConfig - Field interactions configuration
+   * @param {number} privateLabelId - Private label ID
+   * @param {Object} extensions - Extension configuration
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  async deployFieldInteractions(fieldInteractionsConfig, privateLabelId, extensions) {
+    if (!fieldInteractionsConfig || Object.keys(fieldInteractionsConfig).length === 0) {
+      return [];
+    }
+
+    const fieldMapInstances = await this.crudService.getFieldMapInstances(fieldInteractionsConfig, privateLabelId);
+
+    if (!fieldMapInstances || !fieldMapInstances.length) {
+      this.logger.multiLog(chalk.yellow('Could not find Field Map Instances for Field Interactions deploy. Please check rest logs!'), this.logger.multiLogLevels.warnFiData);
+      this.logger.multiLog(chalk.yellow('Field Interactions will be skipped!'), this.logger.multiLogLevels.warnFiData);
+      return [];
+    }
+
+    Object.values(fieldInteractionsConfig).forEach((configVal) => {
+      const entityFieldMaps = fieldMapInstances.filter((entityFieldMap) => {
+        return entityFieldMap.entity === configVal.entityName;
+      });
+
+      for (const configField of configVal.fields) {
+        const fieldMapInstance = entityFieldMaps.find((fieldMap) => {
+          return fieldMap.columnName.toLowerCase() === configField.fieldName.toLowerCase();
+        });
+
+        if (fieldMapInstance) {
+          configField.fieldMapId = fieldMapInstance.id;
+        } else {
+          this.logger.multiLog(chalk.yellow(`Could not find field map for: ${configField.fieldName}!`), this.logger.multiLogLevels.debugFiData);
+          this.logger.multiLog(chalk.yellow(`Field Interactions for ${configField.fieldName} for ${configVal.entityName} will not be deployed!`), this.logger.multiLogLevels.debugFiData);
+          configVal.fields = configVal.fields.filter((filterField) => {
+            return filterField.fieldName.toLowerCase() !== configField.fieldName.toLowerCase();
+          });
+        }
+      }
+    });
+
+    const fiData = await this.crudService.getFieldInteractions(fieldInteractionsConfig, privateLabelId);
+
+    if (!fiData) {
+      return [];
+    }
+
+    const uploadConfig = this.createUploadConfig(fiData, fieldInteractionsConfig);
+    this.logger.multiLog(`Field Interactions uploadConfig for ${privateLabelId}:  ${JSON.stringify(uploadConfig)}`, this.logger.multiLogLevels.debugFiData);
+
+    const { promiseList, results } = this.processUploadConfig(uploadConfig, extensions, privateLabelId);
+
+    const responses = await Promise.allSettled(promiseList);
+    const responseValues = responses.map((response) => {
+      return response.value;
+    });
+
+    return results.concat(responseValues).flat();
+  }
+
+  /**
+   * Deploys selected field interactions based on selective configuration
+   * @param {Object} selectiveExtensions - Selective extensions configuration
+   * @param {number} privateLabelId - Private label ID
+   * @param {Object} extensions - Full extension configuration
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, extensions) {
+    if (!selectiveExtensions.fieldInteractions || Object.keys(selectiveExtensions.fieldInteractions).length === 0) {
+      this.logger.multiLog(chalk.yellow('Could not find Field Interactions in "selective-extension.json" file. Field Interactions will be skipped!'), this.logger.multiLogLevels.warnFiData);
+      return [];
+    }
+
+    this.logger.multiLog('Selective Field Interactions deploy', this.logger.multiLogLevels.debugFiData);
+    const config = this.buildSelectedConfig(selectiveExtensions);
+    return this.deployFieldInteractions(config, privateLabelId, extensions);
+  }
+
+  /**
+   * Deploys all field interactions from extension configuration
+   * @param {number} privateLabelId - Private label ID
+   * @param {Object} extensions - Full extension configuration
+   * @returns {Promise<Array>} Array of deployment results
+   */
+  deployAllFieldInteractions(privateLabelId, extensions) {
+    this.logger.multiLog('Full Field Interactions deploy', this.logger.multiLogLevels.debugFiData);
+    const config = this.buildFullConfig(extensions);
+
+    if (!config || Object.keys(config).length === 0) {
+      this.logger.warn(chalk.yellow('Could not find Field Interactions in "extension.json" file. Field Interactions will be skipped!'));
+      return [];
+    }
+
+    return this.deployFieldInteractions(config, privateLabelId, extensions);
+  }
+
+  createUploadConfig(fiData, fieldInteractions) {
+    const uploadConfig = {};
+
+    for (const entity of Object.keys(fieldInteractions)) {
+      const entityObj = fieldInteractions[entity];
+      uploadConfig[entity] = {};
+
+      for (const selectiveFI of entityObj.fields) {
+        const toUpdateNameID = [];
+        const toAddNames = [];
+
+        for (const fiName of selectiveFI.fieldInteractionNames) {
+          if (fiData.find((fi) => {
+            return fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName;
+          })) {
+            const id = fiData.find((fi) => {
+              return fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName;
+            }).id;
+            toUpdateNameID.push({ name: fiName, id: id });
+          } else {
+            toAddNames.push(fiName);
+          }
+        }
+
+        if (toUpdateNameID.length) {
+          if (!uploadConfig[entity].toUpdate) {
+            uploadConfig[entity].toUpdate = {};
+          }
+
+          uploadConfig[entity].toUpdate[selectiveFI.fieldName] = {};
+          uploadConfig[entity].toUpdate[selectiveFI.fieldName].interactionNameID = toUpdateNameID;
+        }
+
+        if (toAddNames.length) {
+          if (!uploadConfig[entity].toAdd) {
+            uploadConfig[entity].toAdd = {};
+          }
+
+          uploadConfig[entity].toAdd[selectiveFI.fieldName] = {};
+          uploadConfig[entity].toAdd[selectiveFI.fieldName].fieldMapId = selectiveFI.fieldMapId;
+          uploadConfig[entity].toAdd[selectiveFI.fieldName].interactionNames = toAddNames;
+        }
+      }
+    }
+
+    return uploadConfig;
+  }
 }
 
+// Backward compatible module-level interface
+let serviceInstance;
+
+function setUpService(restApiClient) {
+  const crudService = new FieldInteractionsCrudService(restApiClient);
+  serviceInstance = new FieldInteractionDeployService(crudService, entityNameMap, resultsSvc, utils);
+}
 
 function deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, extensions) {
-  if (!selectiveExtensions.fieldInteractions) {
-    return Promise.resolve([]);
-  }
-  const selectedFieldInteraction = selectiveExtensions.fieldInteractions;
-  logger.debug('Selective Field Interactions deploy');
-  Object.entries(selectedFieldInteraction).forEach(([selKey, selVal]) => {
-    if (entityNameMap[selKey]) {
-      selVal.entityName = entityNameMap[selKey].entityName;
-    } else {
-      logger.warn(chalk.yellow(`Could not ${selKey} in entityNameMap this entity will be skipped`));
-      logger.warn(chalk.yellow('please check the selective-extension.json to ensure all the field interaction entities are in the entityNameMap.json'));
-    }
-  });
-  return fieldInteRestSvc.getFieldMapInstances(selectedFieldInteraction, privateLabelId)
-    .then(fieldMapInstnaces => {
-      if (!fieldMapInstnaces || !fieldMapInstnaces.length) {
-        return Promise.resolve([]);
-      }
-      for (const selctiveConfig of Object.values(selectedFieldInteraction)) {
-        const entityFieldMaps = fieldMapInstnaces.filter(entityFieldMap => entityFieldMap.entity === selctiveConfig.entityName);
-        for (const selConfField of selctiveConfig.fields) {
-          const fieldMapInstance = entityFieldMaps.find(fieldMap => fieldMap.columnName.toLowerCase() === selConfField.fieldName.toLowerCase());
-          if (fieldMapInstance) {
-            selConfField.fieldMapId = fieldMapInstance.id;
-          } else {
-            logger.debug(chalk.red(`Can't find field map for: ${selConfField.fieldName}`));
-            selctiveConfig.fields = selctiveConfig.fields.filter(filterField => filterField.fieldName.toLowerCase() !== selConfField.fieldName.toLowerCase());
-          }
-        }
-      }
-      return fieldInteRestSvc.getFieldInteractions(selectedFieldInteraction, privateLabelId).then(fiData => {
-        if (fiData) {
-          const uploadConfig = createUploadConfig(fiData, selectedFieldInteraction);
-          logger.debug(`Field interaction uploadConfig for ${privateLabelId}:  ${JSON.stringify(uploadConfig)}`);
-          const promiseList = [];
-          const results = []
-          if (extensions.fieldInteractions) {
-            Object.keys(uploadConfig).forEach(entity => {
-              logger.debug('Updating Field Interactions for Entity: ', entity);
-              if (extensions.fieldInteractions[entity]) {
-                if (uploadConfig[entity].toUpdate) {
-                  Object.keys(uploadConfig[entity].toUpdate).forEach(fieldKey => {
-                    logger.debug('Updating Field Interactions for field: ', uploadConfig[entity].toUpdate[fieldKey]);
-                    uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach(interaction => {
-                      const extensionFI = extensions.fieldInteractions[entity].find(fi => interaction.name === fi.name && fieldKey === fi.fieldName);
-                      if (extensionFI) {
-                        const {privateLabelIds} = extensionFI;
-                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
-                          promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
-                        } else {
-                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
-                        }
-                      } else {
-                        logger.warn(chalk.yellow(`Can't find '${interaction.name}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
-                        results.push(resultsSvc.handleUpdateFIFail(entity, fieldKey, interactionName,
-                          `could not find ${interaction.name} in ${entity}.${fieldKey} in extention file`));
-                      }
-                    });
-                  });
-                }
-                if (uploadConfig[entity].toAdd) {
-                  logger.debug('Adding Field Interactions for Entity: ', entity);
-                  Object.keys(uploadConfig[entity].toAdd).forEach(fieldKey => {
-                    logger.debug('Adding Field Interactions for field: ', uploadConfig[entity].toAdd[fieldKey]);
-                    uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach(interactionName => {
-                      const extensionFI = extensions.fieldInteractions[entity].find(fi => interactionName === fi.name && fieldKey === fi.fieldName);
-                      if (extensionFI) {
-                        const {privateLabelIds} = extensionFI;
-                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
-                          promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
-                        } else {
-                          logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
-                        }
-                      } else {
-                        logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
-                        results.push(resultsSvc.handleAddFIFail(entity, fieldKey, interactionName,
-                          `could not find ${interactionName} in ${entity}.${fieldKey} in extention file`));
-                      }
-                    });
-                  });
-                }
-              } else {
-                logger.warn(chalk.yellow(`Can't find '${entity}' in extentions file, Field interactions for '${entity}' will not be deployed!`));
-                results.push(resultsSvc.handleFIEntityFail(entity, uploadConfig[entity], `Unable to find entity '${entity}' in extentions`));
-              }
-            });
-          } else {
-            logger.warn(chalk.yellow('Can\'t find any Field Interaction in extentions file! All Field interactions won\'t be deployed!'));
-            results.push(resultsSvc.handleFIExtentionsFail(uploadConfig));
-          }
-          return Promise.allSettled(promiseList).then(repsonses => {
-            const responseValues = repsonses.map(repsonse => repsonse.value);
-            return results.concat(responseValues).flat();
-          });
-        }
-      });
-    });
+  return serviceInstance.deploySelectedFieldInteractions(selectiveExtensions, privateLabelId, extensions);
 }
-
 
 function deployAllFieldInteractions(privateLabelId, extensions) {
-  const fullCOConfig = {};
-  logger.debug('Full Field Interactions deploy');
-  if (extensions.fieldInteractions) {
-    Object.entries(extensions.fieldInteractions).forEach(([extKey, extval]) => {
-      if (entityNameMap[extKey]) {
-        fullCOConfig[extKey] = {entityName: entityNameMap[extKey].entityName, fields: []};
-        const fields =  extval.map(fi => fi.fieldName.toLowerCase()).filter(utils.onlyUnique);
-        fields.forEach(field => {
-          const fieldFIs = extval.filter(extFI => extFI.fieldName.toLowerCase() === field.toLowerCase()).map(extFI => extFI.name);
-          fullCOConfig[extKey].fields.push({fieldName: field, fieldInteractionNames: fieldFIs});
-        });
-      } else {
-        logger.warn(chalk.yellow(`Could not ${extKey} in entityNameMap this entity will be skipped`));
-        logger.warn(chalk.yellow('please check the extentions.json to ensure all the field interaction entities are in the entityNameMap.json'));
-      }
-    });
-  } else {
-    logger.warn(chalk.yellow(`Could not  field interactions in extentions field interactions will be skipped`));
-    return Promise.resolve([]);
-  }
-  return fieldInteRestSvc.getFieldMapInstances(fullCOConfig, privateLabelId)
-    .then(fieldMapInstnaces => {
-      if (!fieldMapInstnaces) {
-        logger.warn(chalk.yellow('Could not find field map instances for field interactions deploy please check rest logs'));
-        logger.warn(chalk.yellow('field interactions will be skipped'));
-        return Promise.resolve([]);
-      }
-      Object.values(fullCOConfig).forEach(fcVal => {
-        const entityFieldMaps = fieldMapInstnaces.filter(entityFieldMap => entityFieldMap.entity === fcVal.entityName);
-        for (const fcfield of fcVal.fields) {
-          const fieldMapIntance = entityFieldMaps.find(fieldMap => fieldMap.columnName.toLowerCase() === fcfield.fieldName.toLowerCase())
-          if (fieldMapIntance) {
-            fcfield.fieldMapId = fieldMapIntance.id;
-          } else {
-            logger.debug(chalk.yellow(`Can't find field map for: ${fcfield.fieldName}!`));
-            logger.debug(chalk.yellow(`Interactions for ${fcfield.fieldName} for ${fcVal.entityName} will not be deployed!`));
-            fcVal.fields = fcVal.fields.filter(filtField => filtField.fieldName.toLowerCase() !==  fcfield.fieldName.toLowerCase());
-          }
-        }
-      });
-      return fieldInteRestSvc.getFieldInteractions(fullCOConfig, privateLabelId).then(fiData => {
-        if (fiData) {
-          const uploadConfig = createUploadConfig(fiData, fullCOConfig);
-          logger.dev(`upload config: ${JSON.stringify(uploadConfig)}`);
-          const promiseList = [];
-          const results = []
-          if (extensions.fieldInteractions) {
-            Object.keys(uploadConfig).forEach(entity => {
-              logger.debug('Updating Field Interactions for Entity: ', entity);
-              if (extensions.fieldInteractions[entity]) {
-                if (uploadConfig[entity].toUpdate) {
-                  Object.keys(uploadConfig[entity].toUpdate).forEach(fieldKey => {
-                    logger.debug('Updating Field Interactions for field: ', uploadConfig[entity].toUpdate[fieldKey]);
-                    uploadConfig[entity].toUpdate[fieldKey].interactionNameID.forEach(interaction => {
-                      const extensionFI = extensions.fieldInteractions[entity].find(fi => interaction.name === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
-                      if (extensionFI) {
-                        const {privateLabelIds} = extensionFI;
-                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
-                          promiseList.push(fieldInteRestSvc.updateFieldInteraction(extensionFI, entity, fieldKey, interaction));
-                        } else {
-                          logger.info(`Field Interaction ${interaction.name} skipped for Private Label ID ${privateLabelId}`);
-                        }
-                      } else {
-                        logger.warn(chalk.yellow(`Can't find '${interaction.name}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
-                        results.push(resultsSvc.handleUpdateFIFail(entity, fieldKey, interaction.name,
-                          `could not find ${interaction.name} in ${entity}.${fieldKey} in extention file`));
-                      }
-                    });
-                  });
-                }
-                if (uploadConfig[entity].toAdd) {
-                  logger.debug('Adding Field Interactions for Entity: ', entity);
-                  Object.keys(uploadConfig[entity].toAdd).forEach(fieldKey => {
-                    logger.debug('Adding Field Interactions for field: ', uploadConfig[entity].toAdd[fieldKey]);
-                    uploadConfig[entity].toAdd[fieldKey].interactionNames.forEach(interactionName => {
-                      const extensionFI = extensions.fieldInteractions[entity].find(fi => interactionName === fi.name && fieldKey.toLowerCase() === fi.fieldName.toLowerCase());
-                      if (extensionFI) {
-                        const {privateLabelIds} = extensionFI;
-                        if (!privateLabelIds || privateLabelIds.includes(privateLabelId.toString())) {
-                          promiseList.push(fieldInteRestSvc.AddFieldInteraction(extensionFI, entity, fieldKey, uploadConfig[entity].toAdd[fieldKey].fieldMapId, interactionName));
-                        } else {
-                          logger.info(`Field Interaction ${interactionName} skipped for Private Label ID ${privateLabelId}`);
-                        }
-                      } else {
-                        logger.warn(chalk.yellow(`Can't find '${interactionName}' for '${fieldKey}' in extentions file Field interaction will not be deployed!`));
-                        results.push(resultsSvc.handleAddFIFail(entity, fieldKey, interactionName,
-                          `could not find ${interactionName} in ${entity}.${fieldKey} in extention file`));
-                      }
-                    });
-                  });
-                }
-              } else {
-                logger.warn(chalk.yellow(`Can't find '${entity}' in extentions file, Field interactions for '${entity}' will not be deployed!`));
-                results.push(resultsSvc.handleFIEntityFail(entity, uploadConfig[entity], `Unable to find entity '${entity}' in extentions`));
-              }
-            });
-          } else {
-            logger.warn(chalk.yellow('Can\'t find any Field Interaction in extentions file! All Field interactions won\'t be deployed!'));
-            results.push(resultsSvc.handleFIExtentionsFail(uploadConfig));
-          }
-          return Promise.allSettled(promiseList).then(repsonses => {
-            const responseValues = repsonses.map(repsonse => repsonse.value);
-            return results.concat(responseValues).flat();
-          });
-        }
-      });
-    });
-}
-
-
-function removeInvalidEntities(interactions) {
-  for (const entity of Object.keys(interactions)) {
-    if (!Array.isArray(interactions[entity])) {
-      logger.warn(chalk.yellow(`The entity '${entity}' is not an array and will be skipped.`));
-      interactions = removeEntity(interactions, entity);
-      continue;
-    }
-    if (!interactions[entity].length) {
-      logger.warn(chalk.yellow(`The entity '${entity}' in selective-extension has no Field interactions to deploy and will be skipped.`));
-      interactions = removeEntity(interactions, entity);
-      continue;
-    }
-    if (interactions[entity].some(field => (!field.fieldName || !field.fieldName.length)
-      || (!field.fieldInteractionNames || !Array.isArray(field.fieldInteractionNames) || !field.fieldInteractionNames.length))) {
-      logger.warn(chalk.yellow(`The entity '${entity}' has bad fields and will be skipped. Please ensure all field objects have the following`));
-      logger.warn(chalk.yellow('\'fieldName\' with a valid field name'));
-      logger.warn(chalk.yellow('\'fieldInteractionNames\' with an array of a least one interaction name'));
-      interactions = removeEntity(interactions, entity);
-      continue;
-    }
-  };
-  return interactions;
-}
-
-function removeEntity(interactions, entity) {
-  logger.debug(`removing '${entity}' from input field interaction`);
-  delete interactions[entity];
-  return interactions
-}
-
-function createUploadConfig(fiData, fieldInteractions) {
-  const uploadConfig = {};
-  for (const entity of Object.keys(fieldInteractions)) {
-    const entityObj = fieldInteractions[entity];
-    uploadConfig[entity] = {};
-    for (const selectiveFI of entityObj.fields) {
-      const toUpdateNameID = [];
-      const toAddNames = [];
-      for (const fiName of selectiveFI.fieldInteractionNames) {
-        if (fiData.find(fi => fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName)) {
-          const id = fiData.find(fi => fi && fi.fieldMapID === selectiveFI.fieldMapId && fi.name === fiName).id
-          toUpdateNameID.push({ name: fiName, id: id });
-        } else {
-          toAddNames.push(fiName);
-        }
-      }
-      if (toUpdateNameID.length) {
-        if (!uploadConfig[entity].toUpdate) {
-          uploadConfig[entity].toUpdate = {}
-        }
-        uploadConfig[entity].toUpdate[selectiveFI.fieldName] = {}
-        uploadConfig[entity].toUpdate[selectiveFI.fieldName].interactionNameID = toUpdateNameID;
-      }
-      if (toAddNames.length) {
-        if (!uploadConfig[entity].toAdd) {
-          uploadConfig[entity].toAdd = {}
-        }
-        uploadConfig[entity].toAdd[selectiveFI.fieldName] = {}
-        uploadConfig[entity].toAdd[selectiveFI.fieldName].fieldMapId = selectiveFI.fieldMapId;
-        uploadConfig[entity].toAdd[selectiveFI.fieldName].interactionNames = toAddNames;
-      }
-    }
-  }
-  return uploadConfig;
+  return serviceInstance.deployAllFieldInteractions(privateLabelId, extensions);
 }
 
 module.exports = {
-  deployAllFieldInteractions,
+  FieldInteractionDeployService,
+  setUpService,
   deploySelectedFieldInteractions,
-  setUpService
+  deployAllFieldInteractions,
 };

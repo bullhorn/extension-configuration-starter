@@ -11,6 +11,7 @@
     ],
     "noEmitHelpers": true,
     "skipDefaultLibCheck": true,
+    "skipLibCheck": true,
     "pretty": true,
     "sourceMap": false,
     "rootDir": "./src",
@@ -26,3 +27,4 @@
   "compileOnSave": false,
   "buildOnSave": false
 }
+

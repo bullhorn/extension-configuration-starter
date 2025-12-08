@@ -1,118 +1,166 @@
-const fetch = require('node-fetch');
-const winston = require('winston');
 const chalk = require('chalk');
-const utils = require('./utils');
-
+const logger = require('./lib/logger');
 const resultsSvc = require('./results-service');
 
-
-const logger = winston.createLogger({
-  levels: utils.loggingLevels.levels,
-  level: 'info',
-  format: winston.format.simple(),
-  transports: [
-    new winston.transports.Console({ format: winston.format.simple() }),
-    new winston.transports.File({ filename: './deploy-logs/error.log', level: 'error', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/combined.log', level: 'debug', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/rest-responses/page-interactions.log', level: 'data', format: winston.format.json(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/results/page-interactions.log', level: 'data', format: winston.format.simple(), options: { flags: 'w' } }),
-    new winston.transports.File({ filename: './deploy-logs/dev-logs.log', level: 'dev', format: winston.format.simple(), options: { flags: 'w' } })
-  ],
-});
-
-let restUrl = ''
-let restToken = ''
-
-function setUpService(debug, rest) {
-  if (debug) {
-    logger.level = 'debug';
+/**
+ * CRUD service for managing page interactions in Bullhorn
+ */
+class PageInteractionsCrudService {
+  /**
+   * Creates an instance of PageInteractionsCrudService
+   * @param {Object} _restApiClient - REST API client for Bullhorn
+   */
+  constructor(_restApiClient) {
+    this.apiClient = _restApiClient;
+    this.logger = logger;
+    this.resultsSvc = resultsSvc;
   }
-  restUrl = rest.url;
-  restToken = rest.token
-  resultsSvc.setUpService(debug);
-}
 
-function fecthPageInteractionData(url, params) {
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(params),
-  }).then(response => response.json())
-    .then(result => {
-      logger.data(`PageInteraction Data url: ${url}`);
-      logger.data(`PageInteraction Data response: ${JSON.stringify(result)}`);
-      return Promise.resolve(result);
-    }).catch(error => {
-      logger.error(chalk.red(error));
+  /**
+   * Fetches page interaction data from Bullhorn API
+   * @param {string} entityType - Entity type to query
+   * @param {string} where - WHERE clause for query
+   * @param {string} fields - Comma-separated list of fields to retrieve
+   * @returns {Promise<Object>} Query result data
+   */
+  fetchPageInteractionData(entityType, where, fields) {
+    return this.apiClient.queryAll(entityType, where, fields)
+      .then((result) => {
+        this.logger.piData(`Query ${entityType}: where: ${where}, fields: ${fields}`);
+        this.logger.piData(`Query ${entityType} response: ${JSON.stringify(result)}`);
+
+        return Promise.resolve(result);
+      }).catch((error) => {
+        this.logger.error(chalk.red(error));
+      });
+  }
+
+  /**
+   * Fetches multiple page interactions based on selective actions configuration
+   * @param {Object} selectivePIActions - Object mapping actions to page interaction names
+   * @returns {Promise<Array>} Flattened array of page interaction data
+   */
+  getPageInteractions(selectivePIActions) {
+    const promiseList = [];
+
+    Object.entries(selectivePIActions).forEach(([ piKey, piVal ]) => {
+      const where = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`;
+      const fields = 'id,name,action';
+
+      promiseList.push(this.fetchPageInteractionData('PageInteraction', where, fields));
     });
-}
 
+    return Promise.allSettled(promiseList).then((results) => {
+      return results.map((result) => {
+        return result.value.data;
+      }).flat();
+    });
+  }
 
-function getPageinteractions(selectivePIActions) {
-  logger.debug(`selectivePIActions:  ${selectivePIActions}`)
-  const promiseList = [];
-  Object.entries(selectivePIActions).forEach(([piKey, piVal]) => {
-    piQuery = `(action = '${piKey}' AND name in ('${piVal.join('\', \'')}'))`
-    const params = {
-      where: piQuery,
-      fields: 'id,name,action',
-      orderBy: 'id',
-      start: 0,
-      count: 500
-    }
-    promiseList.push(fecthPageInteractionData(`${restUrl}/query/PageInteraction?BhRestToken=${restToken}`, params));
-  });
-  return Promise.allSettled(promiseList).then(results => results.map(result => result.value.data).flat());
-}
+  /**
+   * Fetches all page interactions for a specific user
+   * @param {string} username - Username to filter page interactions by
+   * @returns {Promise<Array>} Array of page interaction data
+   */
+  getAllPageInteractions(username) {
+    const where = `modifyingUser.username='${username}'`;
+    const fields = 'id,name,action';
 
-function updatePageInteraction(PI, action, pageInteraction) {
-  logger.debug(`updating PI: ${pageInteraction}`)
-  const url = `${restUrl}/entity/PageInteraction/${pageInteraction.id}?BhRestToken=${restToken}`;
-  let resCode
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(PI)
-  })
-    .then(response => {
+    return this.apiClient.queryAll('PageInteraction', where, fields)
+      .then((result) => {
+        this.logger.piData(`Query Page Interaction url: query/PageInteraction, where: ${where}, fields: ${fields}`);
+        this.logger.piData(`Query Page Interaction response: ${JSON.stringify(result)}`);
+
+        return Promise.resolve(result.data);
+      }).catch((error) => {
+        this.logger.error(chalk.red(error));
+      });
+  }
+
+  /**
+   * Adds a new page interaction to Bullhorn
+   * @param {Object} PI - Page interaction configuration object
+   * @param {string} action - Action type for the page interaction
+   * @param {string} pageInteraction - Name of the page interaction
+   * @returns {Promise<Object>} Result object containing status and response
+   */
+  addPageInteraction(PI, action, pageInteraction) {
+    this.logger.debug(`Adding Page Interaction: name: '${pageInteraction}', PI: ${JSON.stringify(PI)}`);
+    let resCode;
+
+    return this.apiClient.insertEntity('PageInteraction', PI).then((response) => {
       resCode = response.status;
-      return response.json();
-    }).then(result => {
-      logger.data(`update PI: ${url}`);
-      logger.data(`payload: ${JSON.stringify(PI)}`);
-      logger.data(`update PI result: ${JSON.stringify(result)}`);
-      return Promise.resolve(resultsSvc.createPIUpdateResult(action, pageInteraction, resCode));
-    })
-    .catch(error => {
-      logger.error(chalk.red(error));
-      return Promise.reject(`Fail to make Insert Page Interaction call with error: ${error}`);
-    });
-}
 
-function AddPageInteraction(PI, action, pageInteraction) {
-  logger.debug('adding PI: ', pageInteraction)
-  const url = `${restUrl}/entity/PageInteraction?BhRestToken=${restToken}`;
-  let resCode
-  return fetch(url, {
-    method: 'PUT',
-    body: JSON.stringify(PI)
-  })
-    .then(response => {
+      return response.json();
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData('Add Page Interaction url: entity/PageInteraction');
+      this.logger.piData(`Add Page Interaction payload: ${JSON.stringify(PI)}`);
+      this.logger.piData(`Add Page Interaction result: ${formattedResponse}`);
+
+      return Promise.resolve(this.resultsSvc.createPIAddResult(action, pageInteraction, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make Insert Page Interaction call with error: ${error}`));
+    });
+  }
+
+  /**
+   * Updates an existing page interaction in Bullhorn
+   * @param {Object} PI - Page interaction configuration object with updated values
+   * @param {string} action - Action type for the page interaction
+   * @param {Object} pageInteraction - Existing page interaction object with id and name
+   * @returns {Promise<Object>} Result object containing status and response
+   */
+  updatePageInteraction(PI, action, pageInteraction) {
+    this.logger.debug(`Updating Page Interaction: #${pageInteraction.id}, name: ${pageInteraction.name}, pageInteraction: ${JSON.stringify(pageInteraction)}`);
+    let resCode;
+
+    return this.apiClient.updateEntity('PageInteraction', pageInteraction.id, PI).then((response) => {
       resCode = response.status;
+
       return response.json();
-    })
-    .then(result => {
-      logger.data(`insert PI: ${url}`);
-      logger.data(`payload: ${JSON.stringify(PI)}`);
-      logger.data(`insert PI result: ${JSON.stringify(result)}`);
-      return Promise.resolve(resultsSvc.createPIAddResult(action, pageInteraction, resCode));
-    })
-    .catch(error => {
-      return Promise.reject(`Fail to make Insert Page Interaction call with error: ${error}`);
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData(`Update Page Interaction url: entity/PageInteraction/${pageInteraction.id}`);
+      this.logger.piData(`Update Page Interaction payload: ${JSON.stringify(PI)}`);
+      this.logger.piData(`Update Page Interaction result: ${formattedResponse}`);
+
+      return Promise.resolve(this.resultsSvc.createPIUpdateResult(action, pageInteraction, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make Update Page Interaction call with error: ${error}`));
     });
+  }
+
+  /**
+   * Deletes a page interaction from Bullhorn
+   * @param {number} id - Page interaction ID to delete
+   * @param {string} action - Action type for the page interaction
+   * @param {string} interactionName - Name of the page interaction being deleted
+   * @returns {Promise<Object>} Result object containing status and response
+   */
+  deletePageInteraction(id, action, interactionName) {
+    this.logger.debug(`Deleting Page Interaction #${id}, name: '${interactionName}'`);
+    let resCode;
+
+    return this.apiClient.deleteEntity('PageInteraction', id).then((response) => {
+      resCode = response.status;
+
+      return response.json();
+    }).then((result) => {
+      const formattedResponse = JSON.stringify(result);
+      this.logger.piData(`Delete Page Interaction url: entity/PageInteraction/${id}`);
+      this.logger.piData(`Delete Page Interaction  response: ${formattedResponse}`);
+      return Promise.resolve(this.resultsSvc.createPIDeleteResult(action, { name: interactionName, id: id }, resCode, formattedResponse));
+    }).catch((error) => {
+      this.logger.error(chalk.red(error));
+
+      return Promise.reject(new Error(`Fail to make delete Page Interaction  call with error: ${error}`));
+    });
+  }
 }
 
-module.exports = {
-  getPageinteractions,
-  updatePageInteraction,
-  AddPageInteraction,
-  setUpService
-};
+module.exports = PageInteractionsCrudService;
