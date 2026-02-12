@@ -121,6 +121,21 @@
     * page interactions
       * for page interactions you simply need to use actions as keys with the list of interaction names you wish to deploy. Like before if the page interaction is not included in the extension file it will fail to be deployed
       * once you have set up your selective-extension.json in the root of your project with the interactions you wish to deploy all you need to do is run the selective-deploy:<env> script to deploy
+      > ### Automatically generate selective-extension.json
+      > When working on multiple features at a time, you might need to switch between selective-extension.json contents in order to deploy your latest changes without overwriting other, non-merged features. To help with this, run the gen-selective-extension npm script variants to generate the selective-extension.json file in any of 3 ways:
+      > #### Generate complete selective-extension.json for all interactions in the current codebase
+      > ```bash
+      > npm run gen-selective-extension
+      > ```
+      > #### Generate selective-extension.json for the git staging area aka modified files in the current branch
+      > ```bash
+      > npm run gen-selective-extension:staging
+      > ```
+      > #### Generate selective-extension.json for the current feature branch, compared against a "master" branch.
+      > ```bash
+      > npm run gen-selective-extension:feature
+      > ```
+      > You can then run any of the selective-deploy script variants to use this file.
   - **Full Deploy**
     * The full deploy will delete all interactions last modified by the user in the env files (the same user that is used to deploy the interactions)
     * It will then cycle through all interactions in the repo and re-add them to the target environment. 
