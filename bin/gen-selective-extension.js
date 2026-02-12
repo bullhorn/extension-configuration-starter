@@ -176,7 +176,7 @@ class InteractionProcessor {
       return 'field';
     } else if (filePath.includes('/page-interactions/')) {
       return 'page';
-    } else if (filePath.includes('/custom-object-interactions/')) {
+    } else if (filePath.includes('/custom-objects/')) {
       return 'custom-object';
     }
     return null;
@@ -201,8 +201,8 @@ class InteractionProcessor {
    * @returns {string|null} - The custom object name or null
    */
   extractCustomObjectName(filePath) {
-    // Parse from path: src/custom-object-interactions/{custom-object-name}/{field}/file.ts
-    const match = filePath.match(/custom-object-interactions\/([^/]+)\//);
+    // Parse from path: src/custom-objects/{custom-object-name}/{field}/file.ts
+    const match = filePath.match(/custom-objects\/([^/]+)\//);
     return match ? match[1] : null;
   }
 }
@@ -445,7 +445,7 @@ class GenSelectiveExtension {
     const directories = [
       'src/field-interactions',
       'src/page-interactions',
-      'src/custom-object-interactions',
+      'src/custom-objects',
     ];
 
     for (const dir of directories) {
@@ -524,7 +524,7 @@ class GenSelectiveExtension {
             normalizedFilePath.endsWith('.ts') &&
             (normalizedFilePath.includes('field-interactions') ||
              normalizedFilePath.includes('page-interactions') ||
-             normalizedFilePath.includes('custom-object-interactions'))) {
+             normalizedFilePath.includes('custom-objects'))) {
 
           const fullPath = path.join(this.repositoryRoot, filePath);
           // Only include if file exists (not deleted)
