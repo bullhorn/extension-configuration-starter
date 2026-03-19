@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const logger = require('./lib/gen-logger');
 
 /**
  * EntityMapper Class
@@ -79,8 +80,9 @@ class EntityMapper {
  * Extracts metadata from interaction files
  */
 class InteractionProcessor {
-  constructor(entityMapper) {
+  constructor(entityMapper, logger) {
     this.entityMapper = entityMapper;
+    this.logger = logger;
   }
 
   /**
@@ -104,7 +106,7 @@ class InteractionProcessor {
 
       const fileType = this.determineFileType(normalizedPath);
       if (!fileType) {
-        console.warn(chalk.yellow(`Unknown file type: ${normalizedPath}`));
+        this.logger.multiLog(chalk.yellow(`Unknown file type: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
         return null;
       }
 
@@ -112,21 +114,21 @@ class InteractionProcessor {
       const name = this.extractProperty(fileContent, 'name');
 
       if (!name) {
-        console.warn(chalk.yellow(`Missing 'name' property: ${normalizedPath}`));
+        this.logger.multiLog(chalk.yellow(`Missing 'name' property: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
         return null;
       }
 
       if (fileType === 'field' || fileType === 'custom-object') {
         const fieldName = this.extractProperty(fileContent, 'fieldName');
         if (!fieldName) {
-          console.warn(chalk.yellow(`Missing 'fieldName' property: ${normalizedPath}`));
+          this.logger.multiLog(chalk.yellow(`Missing 'fieldName' property: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
           return null;
         }
 
         if (fileType === 'field') {
           const entities = this.entityMapper.findEntitiesForFile(normalizedPath);
           if (!entities || entities.length === 0) {
-            console.warn(chalk.yellow(`No entities found for field interaction: ${normalizedPath}`));
+            this.logger.multiLog(chalk.yellow(`No entities found for field interaction: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
             return null;
           }
           return { type: 'field', name, fieldName, entities, filePath: normalizedPath };
@@ -134,7 +136,7 @@ class InteractionProcessor {
           // custom-object
           const customObjectName = this.extractCustomObjectName(normalizedPath);
           if (!customObjectName) {
-            console.warn(chalk.yellow(`Could not extract custom object name: ${normalizedPath}`));
+            this.logger.multiLog(chalk.yellow(`Could not extract custom object name: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
             return null;
           }
           return { type: 'custom-object', name, fieldName, customObjectName, filePath: normalizedPath };
@@ -142,7 +144,7 @@ class InteractionProcessor {
       } else if (fileType === 'page') {
         const action = this.extractProperty(fileContent, 'action');
         if (!action) {
-          console.warn(chalk.yellow(`Missing 'action' property: ${normalizedPath}`));
+          this.logger.multiLog(chalk.yellow(`Missing 'action' property: ${normalizedPath}`), this.logger.multiLogLevels.warnGenExt);
           return null;
         }
         return { type: 'page', name, action, filePath: normalizedPath };
@@ -150,7 +152,7 @@ class InteractionProcessor {
 
       return null;
     } catch (error) {
-      console.warn(chalk.yellow(`Failed to process file ${tsFilePath}: ${error.message}`));
+      this.logger.multiLog(chalk.yellow(`Failed to process file ${tsFilePath}: ${error.message}`), this.logger.multiLogLevels.warnGenExt);
       return null;
     }
   }
@@ -331,7 +333,8 @@ class GenSelectiveExtension {
   constructor() {
     this.repositoryRoot = process.cwd();
     this.entityMapper = new EntityMapper();
-    this.interactionProcessor = new InteractionProcessor(this.entityMapper);
+    this.logger = logger;
+    this.interactionProcessor = new InteractionProcessor(this.entityMapper, this.logger);
     this.outputBuilder = new OutputBuilder();
 
     // Parse command-line flags
@@ -352,7 +355,7 @@ class GenSelectiveExtension {
    */
   async run() {
     try {
-      console.log('Generating selective-extension.json...');
+      this.logger.multiLog('Generating selective-extension.json...', this.logger.multiLogLevels.infoGenExt);
 
       // Phase 1: Read configuration
       const extensionJson = this.readExtensionJson();
@@ -363,7 +366,7 @@ class GenSelectiveExtension {
 
       // Phase 3: Discover files to process
       const files = this.discoverFiles();
-      console.log(`Found ${files.length} interaction file(s) to process`);
+      this.logger.multiLog(`Found ${files.length} interaction file(s) to process`, this.logger.multiLogLevels.infoGenExt);
 
       // Phase 4-5: Process files and build output
       let successCount = 0;
@@ -393,14 +396,14 @@ class GenSelectiveExtension {
       // Phase 7: Write output and report
       this.writeSelectiveExtension(outputData);
 
-      console.log('\n=== Generation Summary ===');
-      console.log(`Successfully processed: ${successCount} interaction(s)`);
-      console.log(`Errors/warnings: ${errorCount} file(s)`);
-      console.log(`Output written to: ${path.join(this.repositoryRoot, 'selective-extension.json')}`);
-      console.log('✓ Done');
+      this.logger.multiLog('\n=== Generation Summary ===', this.logger.multiLogLevels.infoGenExt);
+      this.logger.multiLog(`Successfully processed: ${successCount} interaction(s)`, this.logger.multiLogLevels.infoGenExt);
+      this.logger.multiLog(`Errors/warnings: ${errorCount} file(s)`, this.logger.multiLogLevels.infoGenExt);
+      this.logger.multiLog(`Output written to: ${path.join(this.repositoryRoot, 'selective-extension.json')}`, this.logger.multiLogLevels.infoGenExt);
+      this.logger.multiLog('✓ Done', this.logger.multiLogLevels.infoGenExt);
 
     } catch (error) {
-      console.error(chalk.red(`\n${error.message}`));
+      this.logger.error(chalk.red(`\n${error.message}`));
       process.exit(1);
     }
   }
@@ -454,7 +457,7 @@ class GenSelectiveExtension {
       if (fs.existsSync(dirPath)) {
         this.findTsFilesRecursive(dirPath, files);
       } else {
-        console.warn(chalk.yellow(`Directory does not exist: ${dir}`));
+        this.logger.multiLog(chalk.yellow(`Directory does not exist: ${dir}`), this.logger.multiLogLevels.warnGenExt);
       }
     }
 
