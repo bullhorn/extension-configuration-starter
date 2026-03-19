@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
@@ -103,7 +104,7 @@ class InteractionProcessor {
 
       const fileType = this.determineFileType(normalizedPath);
       if (!fileType) {
-        console.warn(`[WARN] Unknown file type: ${normalizedPath}`);
+        console.warn(chalk.yellow(`Unknown file type: ${normalizedPath}`));
         return null;
       }
 
@@ -111,21 +112,21 @@ class InteractionProcessor {
       const name = this.extractProperty(fileContent, 'name');
 
       if (!name) {
-        console.warn(`[WARN] Missing 'name' property: ${normalizedPath}`);
+        console.warn(chalk.yellow(`Missing 'name' property: ${normalizedPath}`));
         return null;
       }
 
       if (fileType === 'field' || fileType === 'custom-object') {
         const fieldName = this.extractProperty(fileContent, 'fieldName');
         if (!fieldName) {
-          console.warn(`[WARN] Missing 'fieldName' property: ${normalizedPath}`);
+          console.warn(chalk.yellow(`Missing 'fieldName' property: ${normalizedPath}`));
           return null;
         }
 
         if (fileType === 'field') {
           const entities = this.entityMapper.findEntitiesForFile(normalizedPath);
           if (!entities || entities.length === 0) {
-            console.warn(`[WARN] No entities found for field interaction: ${normalizedPath}`);
+            console.warn(chalk.yellow(`No entities found for field interaction: ${normalizedPath}`));
             return null;
           }
           return { type: 'field', name, fieldName, entities, filePath: normalizedPath };
@@ -133,7 +134,7 @@ class InteractionProcessor {
           // custom-object
           const customObjectName = this.extractCustomObjectName(normalizedPath);
           if (!customObjectName) {
-            console.warn(`[WARN] Could not extract custom object name: ${normalizedPath}`);
+            console.warn(chalk.yellow(`Could not extract custom object name: ${normalizedPath}`));
             return null;
           }
           return { type: 'custom-object', name, fieldName, customObjectName, filePath: normalizedPath };
@@ -141,7 +142,7 @@ class InteractionProcessor {
       } else if (fileType === 'page') {
         const action = this.extractProperty(fileContent, 'action');
         if (!action) {
-          console.warn(`[WARN] Missing 'action' property: ${normalizedPath}`);
+          console.warn(chalk.yellow(`Missing 'action' property: ${normalizedPath}`));
           return null;
         }
         return { type: 'page', name, action, filePath: normalizedPath };
@@ -149,7 +150,7 @@ class InteractionProcessor {
 
       return null;
     } catch (error) {
-      console.warn(`[WARN] Failed to process file ${tsFilePath}: ${error.message}`);
+      console.warn(chalk.yellow(`Failed to process file ${tsFilePath}: ${error.message}`));
       return null;
     }
   }
@@ -399,7 +400,7 @@ class GenSelectiveExtension {
       console.log('✓ Done');
 
     } catch (error) {
-      console.error(`\n[ERROR] ${error.message}`);
+      console.error(chalk.red(`\n${error.message}`));
       process.exit(1);
     }
   }
@@ -453,7 +454,7 @@ class GenSelectiveExtension {
       if (fs.existsSync(dirPath)) {
         this.findTsFilesRecursive(dirPath, files);
       } else {
-        console.warn(`[WARN] Directory does not exist: ${dir}`);
+        console.warn(chalk.yellow(`Directory does not exist: ${dir}`));
       }
     }
 
