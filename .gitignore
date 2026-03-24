@@ -7,6 +7,7 @@
 /output
 /out-tsc
 /deploy-logs
+gen-selective-extension.log
 
 # dependencies
 /node_modules

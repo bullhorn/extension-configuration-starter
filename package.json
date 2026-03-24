@@ -1,13 +1,16 @@
 {
   "repository": "extension-configuration-starter",
   "license": "MIT",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Starter Kit for Extension Configurations",
   "scripts": {
     "selective-deploy:npe": "node bin/selective-build-and-upload.js npe",
     "full-deploy:npe": "node bin/full-build-and-upload.js npe",
     "selective-deploy:prod": "node bin/selective-build-and-upload.js prod",
     "full-deploy:prod": "node bin/full-build-and-upload.js prod",
+    "gen-selective-extension": "node bin/gen-selective-extension.js",
+    "gen-selective-extension:staging": "node bin/gen-selective-extension.js --staging",
+    "gen-selective-extension:feature": "node bin/gen-selective-extension.js --feature",
     "lint": "eslint --ext .ts . --format table",
     "lint:fix": "eslint --fix --ext .ts . --format table",
     "pre-commit": "lint-staged",
