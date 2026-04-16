@@ -26,8 +26,7 @@
       * The `full-deploy:prod/selective-deploy:prod` job uses `environment.prod.json`, `full-deploy:npe/selective-deploy:npe` uses `environment.npe.json`
       * More environments can be added by adding new environment files and new npm jobs in `package.json`.
     - Configure your OAuth `clientId/clientSecret` and `users` that will be used to deploy your interactions
-      * for now `clientId/clientSecret` can be a PS-shared key, which is subject to change in future to be individual for each client and each environment
-        - OAuth key must have 'internalAPI' permission assigned to deploy interactions (done through the DBA ticket creation)
+      * Refer to the documentation [here](https://kb.bullhorn.com/ats/Content/BHATS/Topics/BHExtensionConfigStarter.htm) to request a pair of OAuth credentials for each environment
       * you can provide an array of `users`
         - each user object should have a `username`, `password`, and `privateLabelId` parameter
         - Running the corresponding job deploys all Field and Page Interactions to every users' Private Label in the file
