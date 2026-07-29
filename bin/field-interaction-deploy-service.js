@@ -52,19 +52,24 @@ class FieldInteractionDeployService {
     if (extensions.fieldInteractions && Object.keys(extensions.fieldInteractions).length > 0) {
       Object.entries(extensions.fieldInteractions).forEach(([ extKey, extVal ]) => {
         if (this.entityNameMap[extKey]) {
-          fullCOConfig[extKey] = { entityName: this.entityNameMap[extKey].entityName, fields: [] };
           const fields = extVal.map((fi) => {
             return fi.fieldName.toLowerCase();
           }).filter(this.utils.onlyUnique);
 
-          fields.forEach((field) => {
-            const fieldFIs = extVal.filter((extFI) => {
-              return extFI.fieldName.toLowerCase() === field.toLowerCase();
-            }).map((extFI) => {
-              return extFI.name;
+          if (fields.length === 0) {
+            this.logger.multiLog(chalk.yellow(`No field interactions remaining for ${extKey} after filtering. This entity will be skipped!`), this.logger.multiLogLevels.warnFiData);
+          } else {
+            fullCOConfig[extKey] = { entityName: this.entityNameMap[extKey].entityName, fields: [] };
+
+            fields.forEach((field) => {
+              const fieldFIs = extVal.filter((extFI) => {
+                return extFI.fieldName.toLowerCase() === field.toLowerCase();
+              }).map((extFI) => {
+                return extFI.name;
+              });
+              fullCOConfig[extKey].fields.push({ fieldName: field, fieldInteractionNames: fieldFIs });
             });
-            fullCOConfig[extKey].fields.push({ fieldName: field, fieldInteractionNames: fieldFIs });
-          });
+          }
         } else {
           this.logger.multiLog(chalk.yellow(`Could not find ${extKey} in 'entityNameMap.json'. This entity will be skipped!`), this.logger.multiLogLevels.warnFiData);
           this.logger.multiLog(chalk.yellow('Please check the \'extensions.json\' to ensure all the Field Interaction entities are in the \'entityNameMap.json\''), this.logger.multiLogLevels.warnFiData);
